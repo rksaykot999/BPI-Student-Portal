@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPI Student Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom styles for the attendance bar */
+        #attendance-chart-container {
+            width: 100%;
+            height: 30px;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        #attendance-chart-bar {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.875rem; /* text-sm */
+        }
+        /* Style for the modal overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="app" class="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col items-center justify-center">
+
+        <!-- Login Section -->
+        <div id="login-section" class="p-8 flex flex-col items-center justify-center text-center w-full">
+            <h1 class="text-3xl font-bold mb-2 text-gray-800">BPI Student Portal</h1>
+            <p class="text-gray-500 mb-6">Log in to view your dashboard.</p>
+            <div class="w-full max-w-sm space-y-4">
+                <div>
+                    <input id="user-id-input" type="text" placeholder="User ID (e.g., 12345)" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <input id="password-input" type="password" placeholder="Password" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button id="login-button" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition duration-300">Log In</button>
+            </div>
+            <p id="login-message" class="mt-4 text-sm text-red-500 hidden">Invalid User ID or Password.</p>
+        </div>
+
+        <!-- Dashboard Section (Initially Hidden) -->
+        <div id="dashboard-section" class="hidden w-full">
+            <!-- Header -->
+            <header class="bg-blue-600 text-white p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div class="flex-1">
+                    <h1 class="text-3xl md:text-4xl font-bold mb-1 md:mb-0">BPI Student Portal</h1>
+                    <p class="text-blue-200 text-sm">Welcome, Student!</p>
+                </div>
+                <div class="mt-4 md:mt-0 md:text-right">
+                    <p class="text-sm font-light text-blue-200">Your User ID:</p>
+                    <p id="user-id" class="text-base font-medium text-white break-words"></p>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="p-6 md:p-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <!-- Loading Indicator -->
+                <div id="loading" class="col-span-full text-center py-12 text-gray-500 font-medium hidden">
+                    Loading student data...
+                </div>
+
+                <!-- Student Info Card -->
+                <div id="student-info-card" class="bg-gray-50 p-6 rounded-2xl shadow-sm border border-gray-200 hidden">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Student Information
+                    </h2>
+                    <div class="space-y-3 text-sm text-gray-700">
+                        <p><strong>Name:</strong> <span id="student-name" class="font-medium text-gray-900">N/A</span></p>
+                        <p><strong>Student ID:</strong> <span id="student-id" class="font-medium text-gray-900">N/A</span></p>
+                        <p><strong>Major:</strong> <span id="student-major" class="font-medium text-gray-900">N/A</span></p>
+                        <p><strong>Enrollment Year:</strong> <span id="student-year" class="font-medium text-gray-900">N/A</span></p>
+                    </div>
+                </div>
+
+                <!-- Results Card -->
+                <div id="results-card" class="bg-gray-50 p-6 rounded-2xl shadow-sm border border-gray-200 hidden lg:col-span-2">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                        Results
+                    </h2>
+                    <div id="results-table-container" class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-gray-600 rounded-lg overflow-hidden">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th class="p-3 font-medium">Subject</th>
+                                    <th class="p-3 font-medium">Grade</th>
+                                    <th class="p-3 font-medium">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-table" class="bg-white">
+                                <!-- Results will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="no-results" class="text-center py-4 text-gray-500 hidden">No results available yet.</div>
+                </div>
+
+                <!-- Attendance Card -->
+                <div id="attendance-card" class="bg-gray-50 p-6 rounded-2xl shadow-sm border border-gray-200 hidden">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Attendance
+                    </h2>
+                    <div class="space-y-3 text-sm text-gray-700">
+                        <p><strong>Overall Attendance:</strong> <span id="attendance-rate-text" class="font-medium text-gray-900">N/A</span></p>
+                        <div id="attendance-chart-container">
+                            <div id="attendance-chart-bar"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Card -->
+                <div id="performance-card" class="bg-gray-50 p-6 rounded-2xl shadow-sm border border-gray-200 hidden">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17l-3-3-4 4-5-5-2 2"/></svg>
+                        Performance Summary
+                    </h2>
+                    <div class="space-y-3 text-sm text-gray-700">
+                        <p><strong>GPA:</strong> <span id="gpa" class="font-medium text-gray-900">N/A</span></p>
+                        <p><strong>Last Exam Grade:</strong> <span id="last-grade" class="font-medium text-gray-900">N/A</span></p>
+                    </div>
+                    <button id="insight-button" class="mt-4 w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition duration-300">
+                        Get Performance Insights
+                    </button>
+                </div>
+                
+                 <!-- Upcoming Events Card -->
+                <div id="events-card" class="bg-gray-50 p-6 rounded-2xl shadow-sm border border-gray-200 hidden">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Upcoming Events
+                    </h2>
+                    <div id="events-list" class="space-y-3 text-sm text-gray-700">
+                        <!-- Events will be injected here -->
+                    </div>
+                    <div id="no-events" class="text-center py-4 text-gray-500 hidden">No upcoming events.</div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- Message Box for Alerts -->
+        <div id="message-box" class="fixed inset-x-0 bottom-4 flex justify-center z-50 transition-opacity duration-300 opacity-0">
+            <div class="bg-red-500 text-white p-4 rounded-xl shadow-lg flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h.01a1 1 0 000-2H9z" clip-rule="evenodd"/></svg>
+                <span id="message-text" class="font-medium"></span>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- Modal for Gemini API Response -->
+    <div id="insight-modal" class="modal-overlay hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-lg w-full m-4 relative animate-fade-in">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Academic Insights</h3>
+            <div id="modal-content" class="text-gray-700 leading-relaxed overflow-y-auto max-h-96">
+                <!-- Content will be injected here -->
+            </div>
+            <div id="modal-loading" class="text-center py-8 hidden">
+                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-2 text-blue-500">Generating insights...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Function to display an alert message
+        function showMessage(message) {
+            const msgBox = document.getElementById('message-box');
+            const msgText = document.getElementById('message-text');
+            msgText.textContent = message;
+            msgBox.classList.remove('opacity-0', 'scale-95');
+            msgBox.classList.add('opacity-100', 'scale-100');
+            setTimeout(() => {
+                msgBox.classList.remove('opacity-100', 'scale-100');
+                msgBox.classList.add('opacity-0', 'scale-95');
+            }, 5000);
+        }
+
+        // Mock student data stored directly in a JavaScript object
+        const studentData = {
+            '12345': {
+                name: "Rakib Ahmed",
+                studentId: "12345",
+                major: "Electrical Engineering",
+                enrollmentYear: 2022,
+                results: [
+                    { subject: "Circuit Theory", grade: "A-", status: "Passed" },
+                    { subject: "Electronics I", grade: "A+", status: "Passed" },
+                    { subject: "Thermodynamics", grade: "B", status: "Passed" },
+                    { subject: "Fluid Mechanics", grade: "C+", status: "Passed" }
+                ],
+                attendance: {
+                    attended: 65,
+                    total: 75
+                },
+                performance: {
+                    gpa: 3.5,
+                    lastGrade: "A+"
+                },
+                upcomingEvents: [
+                    { title: "Mid-Term Exam (Physics)", date: "October 15, 2025" },
+                    { title: "Project Submission", date: "October 20, 2025" }
+                ]
+            },
+            '67890': {
+                name: "Anik Hasan",
+                studentId: "67890",
+                major: "Civil Engineering",
+                enrollmentYear: 2021,
+                results: [
+                    { subject: "Engineering Mechanics", grade: "B", status: "Passed" },
+                    { subject: "Structural Design", grade: "A-", status: "Passed" },
+                    { subject: "Geotechnical Engineering", grade: "B+", status: "Passed" },
+                    { subject: "Surveying", grade: "A", status: "Passed" }
+                ],
+                attendance: {
+                    attended: 70,
+                    total: 75
+                },
+                performance: {
+                    gpa: 3.7,
+                    lastGrade: "B+"
+                },
+                upcomingEvents: [
+                    { title: "Field Trip to Construction Site", date: "October 18, 2025" },
+                    { title: "Structural Engineering Seminar", date: "November 5, 2025" }
+                ]
+            }
+        };
+        
+        // Asynchronous function to fetch Gemini API insights
+        async function getPerformanceInsights(studentInfo) {
+            const modal = document.getElementById('insight-modal');
+            const modalContent = document.getElementById('modal-content');
+            const loadingIndicator = document.getElementById('modal-loading');
+
+            modal.classList.remove('hidden');
+            modalContent.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            // Create a prompt with student data
+            const prompt = `
+            Apni ekjon bondhutto-poripunno academic advisor hishebe ei chhatro-chhatrir data bisleshan korun. Tar podarshoner ekta sankshep den ebong tar grades er opor bhitti kore kichu poramorsho din.
+            Chhatro-chhatrir Data:
+            - Naam: ${studentInfo.name}
+            - Major: ${studentInfo.major}
+            - GPA: ${studentInfo.performance.gpa}
+            - Last Exam Grade: ${studentInfo.performance.lastGrade}
+            - Results: ${JSON.stringify(studentInfo.results)}
+            
+            Jene rakhen, response ti Bangla te hobe. Tar podarshoner prosongsha korun ebong ekta chhotto porikkhar jonno plan din.
+            `;
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }]
+                };
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate insights at this time.";
+                
+                // Update modal with the generated text
+                modalContent.innerHTML = `<p>${text}</p>`;
+                
+            } catch (error) {
+                modalContent.innerHTML = `<p class="text-red-500">Sorry, there was an error generating the insights. Please try again later.</p>`;
+                console.error('Error fetching from Gemini API:', error);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                modalContent.classList.remove('hidden');
+            }
+        }
+        
+        // Function to show the dashboard and fetch data
+        function showDashboard(userId) {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('user-id').textContent = userId;
+
+            const data = studentData[userId];
+            if (data) {
+                updateUI(data);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('student-info-card').classList.remove('hidden');
+                document.getElementById('results-card').classList.remove('hidden');
+                document.getElementById('attendance-card').classList.remove('hidden');
+                document.getElementById('performance-card').classList.remove('hidden');
+                document.getElementById('events-card').classList.remove('hidden');
+            } else {
+                // If user ID is not found in local data, show error
+                document.getElementById('loading').textContent = "Student data not found.";
+                document.getElementById('loading').classList.remove('hidden');
+                showMessage("Student data not found. Please try a different ID.");
+            }
+        }
+
+        // Add login event listener
+        document.getElementById('login-button').addEventListener('click', () => {
+            const userIdInput = document.getElementById('user-id-input').value.trim();
+            const passwordInput = document.getElementById('password-input').value.trim();
+            const loginMessage = document.getElementById('login-message');
+
+            // Hardcoded login for demonstration.
+            if (userIdInput in studentData && passwordInput === 'password') {
+                loginMessage.classList.add('hidden');
+                showDashboard(userIdInput);
+            } else {
+                loginMessage.classList.remove('hidden');
+            }
+        });
+        
+        // Function to update the UI with data
+        function updateUI(data) {
+            // Student Info
+            document.getElementById('student-name').textContent = data.name || "N/A";
+            document.getElementById('student-id').textContent = data.studentId || "N/A";
+            document.getElementById('student-major').textContent = data.major || "N/A";
+            document.getElementById('student-year').textContent = data.enrollmentYear || "N/A";
+
+            // Results
+            const resultsTable = document.getElementById('results-table');
+            resultsTable.innerHTML = ""; // Clear existing data
+            if (data.results && data.results.length > 0) {
+                document.getElementById('no-results').classList.add('hidden');
+                data.results.forEach(result => {
+                    const row = document.createElement('tr');
+                    const gradeColor = result.grade.startsWith("A") ? 'text-green-600' :
+                                       result.grade.startsWith("B") ? 'text-blue-600' :
+                                       'text-red-600';
+                    row.innerHTML = `
+                        <td class="p-3 border-t">${result.subject}</td>
+                        <td class="p-3 border-t font-bold ${gradeColor}">${result.grade}</td>
+                        <td class="p-3 border-t"><span class="px-2 py-1 rounded-full text-xs font-semibold ${result.status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${result.status}</span></td>
+                    `;
+                    resultsTable.appendChild(row);
+                });
+            } else {
+                document.getElementById('no-results').classList.remove('hidden');
+            }
+
+            // Attendance
+            if (data.attendance) {
+                const percentage = ((data.attendance.attended / data.attendance.total) * 100).toFixed(1);
+                document.getElementById('attendance-rate-text').textContent = `${percentage}% (${data.attendance.attended}/${data.attendance.total})`;
+                const chartBar = document.getElementById('attendance-chart-bar');
+                chartBar.style.width = `${percentage}%`;
+                if (percentage > 80) {
+                    chartBar.style.backgroundColor = '#10B981'; // Green
+                } else if (percentage > 60) {
+                    chartBar.style.backgroundColor = '#F59E0B'; // Yellow
+                } else {
+                    chartBar.style.backgroundColor = '#EF4444'; // Red
+                }
+                chartBar.textContent = `${percentage}%`;
+            } else {
+                document.getElementById('attendance-rate-text').textContent = "N/A";
+                document.getElementById('attendance-chart-bar').style.width = '0%';
+                document.getElementById('attendance-chart-bar').textContent = '';
+            }
+            
+            // Performance
+            if (data.performance) {
+                document.getElementById('gpa').textContent = data.performance.gpa || "N/A";
+                document.getElementById('last-grade').textContent = data.performance.lastGrade || "N/A";
+            }
+
+            // Upcoming Events
+            const eventsList = document.getElementById('events-list');
+            eventsList.innerHTML = ""; // Clear existing events
+            if (data.upcomingEvents && data.upcomingEvents.length > 0) {
+                document.getElementById('no-events').classList.add('hidden');
+                data.upcomingEvents.forEach(event => {
+                    const eventItem = document.createElement('p');
+                    eventItem.innerHTML = `<strong>${event.title}</strong><br><span class="text-xs text-gray-500">${event.date}</span>`;
+                    eventsList.appendChild(eventItem);
+                });
+            } else {
+                document.getElementById('no-events').classList.remove('hidden');
+            }
+
+            // Add event listener for the new button
+            const insightButton = document.getElementById('insight-button');
+            if (insightButton) {
+                insightButton.onclick = () => getPerformanceInsights(data);
+            }
+        }
+        
+        // Event listener to close the modal
+        document.getElementById('close-modal-btn').addEventListener('click', () => {
+            document.getElementById('insight-modal').classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
