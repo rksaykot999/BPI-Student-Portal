@@ -45,6 +45,14 @@
             align-items: center;
             z-index: 1000;
         }
+        /* Simple fade-in animation for modal */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -54,7 +62,7 @@
         <!-- Login Section -->
         <div id="login-section" class="p-8 flex flex-col items-center justify-center text-center w-full">
             <h1 class="text-3xl font-bold mb-2 text-gray-800">BPI Student Portal</h1>
-            <p class="text-gray-500 mb-6">Log in to view your dashboard.</p>
+            <p class="text-gray-500 mb-6">Login to your account</p>
             <div class="w-full max-w-sm space-y-4">
                 <div>
                     <input id="user-id-input" type="text" placeholder="User ID (e.g., 12345)" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -64,7 +72,7 @@
                 </div>
                 <button id="login-button" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition duration-300">Log In</button>
             </div>
-            <p id="login-message" class="mt-4 text-sm text-red-500 hidden">Invalid User ID or Password.</p>
+            <p id="login-message" class="mt-4 text-sm text-red-500 hidden">Invalid user ID or password.</p>
         </div>
 
         <!-- Dashboard Section (Initially Hidden) -->
@@ -87,7 +95,7 @@
                 <div id="loading" class="col-span-full text-center py-12 text-gray-500 font-medium hidden">
                     Loading student data...
                 </div>
-
+                
                 <!-- Student Info Card -->
                 <div id="student-info-card" class="bg-gray-50 p-6 rounded-2xl shadow-sm border border-gray-200 hidden">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -115,6 +123,7 @@
                                     <th class="p-3 font-medium">Subject</th>
                                     <th class="p-3 font-medium">Grade</th>
                                     <th class="p-3 font-medium">Status</th>
+                                    <th class="p-3 font-medium">Analysis</th>
                                 </tr>
                             </thead>
                             <tbody id="results-table" class="bg-white">
@@ -132,7 +141,7 @@
                         Attendance
                     </h2>
                     <div class="space-y-3 text-sm text-gray-700">
-                        <p><strong>Overall Attendance:</strong> <span id="attendance-rate-text" class="font-medium text-gray-900">N/A</span></p>
+                        <p><strong>Total Attendance:</strong> <span id="attendance-rate-text" class="font-medium text-gray-900">N/A</span></p>
                         <div id="attendance-chart-container">
                             <div id="attendance-chart-bar"></div>
                         </div>
@@ -150,7 +159,7 @@
                         <p><strong>Last Exam Grade:</strong> <span id="last-grade" class="font-medium text-gray-900">N/A</span></p>
                     </div>
                     <button id="insight-button" class="mt-4 w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition duration-300">
-                        Get Performance Insights
+                        Performance Insights ✨
                     </button>
                 </div>
                 
@@ -185,9 +194,16 @@
             <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
-            <h3 class="text-2xl font-bold text-gray-800 mb-4">Academic Insights</h3>
+            <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-4"></h3>
             <div id="modal-content" class="text-gray-700 leading-relaxed overflow-y-auto max-h-96">
                 <!-- Content will be injected here -->
+            </div>
+            <div id="audio-controls" class="mt-4 flex items-center space-x-2 hidden">
+                <button id="play-audio-btn" class="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-300 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 mr-1"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.94-2.285 3.186-1.504l11.712 7.21c1.246.765 1.246 2.24 0 3.004l-11.712 7.21c-1.246.781-3.186-.08-3.186-1.504V5.653z" clip-rule="evenodd" /></svg>
+                    Listen
+                </button>
+                <span id="audio-loading" class="text-sm text-gray-500 hidden">Generating audio...</span>
             </div>
             <div id="modal-loading" class="text-center py-8 hidden">
                 <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
@@ -196,7 +212,69 @@
         </div>
     </div>
 
-    <script type="text/javascript">
+    <script type="module">
+        // Import Firebase libraries
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Helper functions for TTS
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcmData, sampleRate) {
+            const pcm16 = new Int16Array(pcmData);
+            const numChannels = 1;
+            const sampleBits = 16;
+            const byteRate = (sampleRate * numChannels * sampleBits) / 8;
+            const blockAlign = (numChannels * sampleBits) / 8;
+            const dataSize = pcm16.byteLength;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            let offset = 0;
+
+            function writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            // RIFF header
+            writeString(view, offset, 'RIFF'); offset += 4;
+            view.setUint32(offset, 36 + dataSize, true); offset += 4;
+            writeString(view, offset, 'WAVE'); offset += 4;
+            
+            // FMT sub-chunk
+            writeString(view, offset, 'fmt '); offset += 4;
+            view.setUint32(offset, 16, true); offset += 4; // Sub-chunk size
+            view.setUint16(offset, 1, true); offset += 2; // Audio format (1 for PCM)
+            view.setUint16(offset, numChannels, true); offset += 2; // Number of channels
+            view.setUint32(offset, sampleRate, true); offset += 4; // Sample rate
+            view.setUint32(offset, byteRate, true); offset += 4; // Byte rate
+            view.setUint16(offset, blockAlign, true); offset += 2; // Block align
+            view.setUint16(offset, sampleBits, true); offset += 2; // Bits per sample
+
+            // DATA sub-chunk
+            writeString(view, offset, 'data'); offset += 4;
+            view.setUint32(offset, dataSize, true); offset += 4;
+            
+            // Write the PCM data
+            const pcmBytes = new Uint8Array(pcmData);
+            for (let i = 0; i < dataSize; i++) {
+                view.setUint8(offset + i, pcmBytes[i]);
+            }
+            
+            return new Blob([view], { type: 'audio/wav' });
+        }
+        
         // Function to display an alert message
         function showMessage(message) {
             const msgBox = document.getElementById('message-box');
@@ -210,133 +288,43 @@
             }, 5000);
         }
 
-        // Mock student data stored directly in a JavaScript object
-        const studentData = {
-            '12345': {
-                name: "Rakib Ahmed",
-                studentId: "12345",
-                major: "Electrical Engineering",
-                enrollmentYear: 2022,
-                results: [
-                    { subject: "Circuit Theory", grade: "A-", status: "Passed" },
-                    { subject: "Electronics I", grade: "A+", status: "Passed" },
-                    { subject: "Thermodynamics", grade: "B", status: "Passed" },
-                    { subject: "Fluid Mechanics", grade: "C+", status: "Passed" }
-                ],
-                attendance: {
-                    attended: 65,
-                    total: 75
-                },
-                performance: {
-                    gpa: 3.5,
-                    lastGrade: "A+"
-                },
-                upcomingEvents: [
-                    { title: "Mid-Term Exam (Physics)", date: "October 15, 2025" },
-                    { title: "Project Submission", date: "October 20, 2025" }
-                ]
-            },
-            '67890': {
-                name: "Anik Hasan",
-                studentId: "67890",
-                major: "Civil Engineering",
-                enrollmentYear: 2021,
-                results: [
-                    { subject: "Engineering Mechanics", grade: "B", status: "Passed" },
-                    { subject: "Structural Design", grade: "A-", status: "Passed" },
-                    { subject: "Geotechnical Engineering", grade: "B+", status: "Passed" },
-                    { subject: "Surveying", grade: "A", status: "Passed" }
-                ],
-                attendance: {
-                    attended: 70,
-                    total: 75
-                },
-                performance: {
-                    gpa: 3.7,
-                    lastGrade: "B+"
-                },
-                upcomingEvents: [
-                    { title: "Field Trip to Construction Site", date: "October 18, 2025" },
-                    { title: "Structural Engineering Seminar", date: "November 5, 2025" }
-                ]
-            }
-        };
+        // --- Firebase & Main App Logic ---
         
-        // Asynchronous function to fetch Gemini API insights
-        async function getPerformanceInsights(studentInfo) {
-            const modal = document.getElementById('insight-modal');
-            const modalContent = document.getElementById('modal-content');
-            const loadingIndicator = document.getElementById('modal-loading');
+        let db, auth, userId;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-            modal.classList.remove('hidden');
-            modalContent.classList.add('hidden');
-            loadingIndicator.classList.remove('hidden');
-
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            // Create a prompt with student data
-            const prompt = `
-            Apni ekjon bondhutto-poripunno academic advisor hishebe ei chhatro-chhatrir data bisleshan korun. Tar podarshoner ekta sankshep den ebong tar grades er opor bhitti kore kichu poramorsho din.
-            Chhatro-chhatrir Data:
-            - Naam: ${studentInfo.name}
-            - Major: ${studentInfo.major}
-            - GPA: ${studentInfo.performance.gpa}
-            - Last Exam Grade: ${studentInfo.performance.lastGrade}
-            - Results: ${JSON.stringify(studentInfo.results)}
+        // Initialize Firebase
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
             
-            Jene rakhen, response ti Bangla te hobe. Tar podarshoner prosongsha korun ebong ekta chhotto porikkhar jonno plan din.
-            `;
-
-            try {
-                const payload = {
-                    contents: [{ parts: [{ text: prompt }] }]
-                };
-                
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+            if (initialAuthToken) {
+                signInWithCustomToken(auth, initialAuthToken).catch(e => {
+                    console.error("Custom token sign-in failed:", e);
+                    signInAnonymously(auth);
                 });
-                
-                const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate insights at this time.";
-                
-                // Update modal with the generated text
-                modalContent.innerHTML = `<p>${text}</p>`;
-                
-            } catch (error) {
-                modalContent.innerHTML = `<p class="text-red-500">Sorry, there was an error generating the insights. Please try again later.</p>`;
-                console.error('Error fetching from Gemini API:', error);
-            } finally {
-                loadingIndicator.classList.add('hidden');
-                modalContent.classList.remove('hidden');
+            } else {
+                signInAnonymously(auth);
             }
+        } else {
+            showMessage("Firebase configuration is missing.");
+            console.error("Firebase config is not available.");
         }
         
-        // Function to show the dashboard and fetch data
-        function showDashboard(userId) {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('user-id').textContent = userId;
-
-            const data = studentData[userId];
-            if (data) {
-                updateUI(data);
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('student-info-card').classList.remove('hidden');
-                document.getElementById('results-card').classList.remove('hidden');
-                document.getElementById('attendance-card').classList.remove('hidden');
-                document.getElementById('performance-card').classList.remove('hidden');
-                document.getElementById('events-card').classList.remove('hidden');
+        // Listen for auth state changes
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                userId = user.uid;
+                document.getElementById('user-id-input').value = userId;
+                document.getElementById('login-button').textContent = "Continue";
             } else {
-                // If user ID is not found in local data, show error
-                document.getElementById('loading').textContent = "Student data not found.";
-                document.getElementById('loading').classList.remove('hidden');
-                showMessage("Student data not found. Please try a different ID.");
+                userId = null;
+                document.getElementById('login-button').textContent = "Log In";
             }
-        }
+        });
 
         // Add login event listener
         document.getElementById('login-button').addEventListener('click', () => {
@@ -344,14 +332,90 @@
             const passwordInput = document.getElementById('password-input').value.trim();
             const loginMessage = document.getElementById('login-message');
 
-            // Hardcoded login for demonstration.
-            if (userIdInput in studentData && passwordInput === 'password') {
-                loginMessage.classList.add('hidden');
-                showDashboard(userIdInput);
+            // Hardcoded password check for a simple demo
+            if (passwordInput === 'password') {
+                if (userIdInput === userId) {
+                    loginMessage.classList.add('hidden');
+                    showDashboard(userIdInput);
+                } else {
+                    loginMessage.textContent = "Invalid User ID for this session.";
+                    loginMessage.classList.remove('hidden');
+                }
             } else {
+                loginMessage.textContent = "Invalid password.";
                 loginMessage.classList.remove('hidden');
             }
         });
+        
+        // Function to create a sample student data document
+        async function createSampleData(studentId) {
+            const studentDocRef = doc(db, 'artifacts', appId, 'users', studentId, 'studentData', 'profile');
+            const sampleData = {
+                name: 'Jane Doe',
+                studentId: studentId,
+                major: 'Computer Science',
+                enrollmentYear: 2023,
+                results: [
+                    { subject: 'Physics', grade: 'B+', status: 'Passed' },
+                    { subject: 'Chemistry', grade: 'A-', status: 'Passed' },
+                    { subject: 'Mathematics', grade: 'C+', status: 'Passed' },
+                    { subject: 'English', grade: 'B', status: 'Passed' },
+                ],
+                attendance: { attended: 15, total: 20 },
+                performance: { gpa: 3.2, lastGrade: 'B+' },
+                upcomingEvents: [
+                    { title: 'Midterm Exam', date: 'October 15, 2024' },
+                    { title: 'Project Submission', date: 'November 1, 2024' },
+                ],
+            };
+            try {
+                await setDoc(studentDocRef, sampleData);
+                console.log("Sample data created successfully.");
+                showMessage("Sample data created! The dashboard will now load.");
+            } catch (e) {
+                console.error("Error creating sample data:", e);
+                showMessage("Failed to create sample data. Please try again.");
+            }
+        }
+
+        // Function to show the dashboard and fetch data
+        function showDashboard(studentId) {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('user-id').textContent = studentId;
+
+            const studentDocRef = doc(db, 'artifacts', appId, 'users', studentId, 'studentData', 'profile');
+
+            onSnapshot(studentDocRef, (docSnap) => {
+                document.getElementById('loading').classList.add('hidden');
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    updateUI(data);
+                    document.getElementById('student-info-card').classList.remove('hidden');
+                    document.getElementById('results-card').classList.remove('hidden');
+                    document.getElementById('attendance-card').classList.remove('hidden');
+                    document.getElementById('performance-card').classList.remove('hidden');
+                    document.getElementById('events-card').classList.remove('hidden');
+                } else {
+                    document.getElementById('loading').innerHTML = `
+                        <p class="mb-4">Student data not found for this user ID.</p>
+                        <button id="create-data-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-300">
+                            Create Sample Data
+                        </button>
+                    `;
+                    document.getElementById('loading').classList.remove('hidden');
+                    document.getElementById('create-data-btn').addEventListener('click', () => {
+                        createSampleData(studentId);
+                    });
+                }
+            }, (error) => {
+                console.error("Error getting document:", error);
+                document.getElementById('loading').innerHTML = `<p class="text-red-500">An error occurred while loading data.</p>`;
+                document.getElementById('loading').classList.remove('hidden');
+                showMessage("An error occurred while loading data.");
+            });
+        }
         
         // Function to update the UI with data
         function updateUI(data) {
@@ -375,6 +439,11 @@
                         <td class="p-3 border-t">${result.subject}</td>
                         <td class="p-3 border-t font-bold ${gradeColor}">${result.grade}</td>
                         <td class="p-3 border-t"><span class="px-2 py-1 rounded-full text-xs font-semibold ${result.status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${result.status}</span></td>
+                        <td class="p-3 border-t">
+                            <button onclick="getSubjectStudyGuide('${result.subject}', '${result.grade}')" class="text-blue-600 hover:text-blue-800 transition">
+                                Tips ✨
+                            </button>
+                        </td>
                     `;
                     resultsTable.appendChild(row);
                 });
@@ -414,18 +483,164 @@
             if (data.upcomingEvents && data.upcomingEvents.length > 0) {
                 document.getElementById('no-events').classList.add('hidden');
                 data.upcomingEvents.forEach(event => {
-                    const eventItem = document.createElement('p');
-                    eventItem.innerHTML = `<strong>${event.title}</strong><br><span class="text-xs text-gray-500">${event.date}</span>`;
+                    const eventItem = document.createElement('div');
+                    eventItem.classList.add('flex', 'justify-between', 'items-center', 'space-x-4');
+                    eventItem.innerHTML = `
+                        <div>
+                            <p><strong>${event.title}</strong></p>
+                            <span class="text-xs text-gray-500">${event.date}</span>
+                        </div>
+                        <button onclick="getEventSuggestions('${event.title}')" class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold hover:bg-blue-300 transition duration-300">
+                            Suggestions ✨
+                        </button>
+                    `;
                     eventsList.appendChild(eventItem);
                 });
             } else {
                 document.getElementById('no-events').classList.remove('hidden');
             }
 
-            // Add event listener for the new button
+            // Add event listener for the performance insight button
             const insightButton = document.getElementById('insight-button');
             if (insightButton) {
-                insightButton.onclick = () => getPerformanceInsights(data);
+                insightButton.onclick = () => {
+                    const prompt = `
+                        Act as a motivational teacher. Analyze the student's data. Praise their good performance. Identify weak subjects based on their results and give three specific and actionable tips to improve them. Your suggestions should be encouraging and easy to follow. Respond in English.
+                        Student Data:
+                        - Name: ${data.name}
+                        - Major: ${data.major}
+                        - GPA: ${data.performance.gpa}
+                        - Last Exam Grade: ${data.performance.lastGrade}
+                        - Results: ${JSON.stringify(data.results)}
+                    `;
+                    getInsights(prompt, 'Student Insights');
+                };
+            }
+        }
+
+        // New function to get study guide for a subject
+        function getSubjectStudyGuide(subject, grade) {
+            const prompt = `
+            Act as an expert teacher. Analyze why this student got a grade of ${grade} in ${subject}. Respond in English.
+            If the grade is A or B, praise them and recommend three advanced topics or resources to deepen their knowledge.
+            If the grade is C or D, identify their weaknesses and provide three specific and effective study tips to overcome them.
+            `;
+            getInsights(prompt, `${subject} Study Guide`);
+        }
+
+        // New function to get suggestions for an upcoming event
+        function getEventSuggestions(eventTitle) {
+            const prompt = `
+            Act as an event planner. Give some preparation tips for the event: ${eventTitle}.
+            Provide at least two tips to help them prepare for the event.
+            Your suggestions must be concise and in English.
+            `;
+            getInsights(prompt, `Suggestions for ${eventTitle}`);
+        }
+        
+        // --- Gemini API Functions ---
+
+        async function getInsights(prompt, title) {
+            const modal = document.getElementById('insight-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalContent = document.getElementById('modal-content');
+            const loadingIndicator = document.getElementById('modal-loading');
+            const audioControls = document.getElementById('audio-controls');
+            
+            modalTitle.textContent = title;
+            modalContent.innerHTML = '';
+            audioControls.classList.add('hidden');
+            modal.classList.remove('hidden');
+            modalContent.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }]
+                };
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, the analysis could not be generated at this time.";
+                
+                modalContent.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+                audioControls.classList.remove('hidden');
+                document.getElementById('play-audio-btn').onclick = () => textToSpeech(text);
+                
+            } catch (error) {
+                modalContent.innerHTML = `<p class="text-red-500">Sorry, an error occurred while generating the analysis. Please try again.</p>`;
+                console.error('Error fetching from Gemini API:', error);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                modalContent.classList.remove('hidden');
+            }
+        }
+
+        async function textToSpeech(text) {
+            const playButton = document.getElementById('play-audio-btn');
+            const audioLoading = document.getElementById('audio-loading');
+            
+            playButton.classList.add('hidden');
+            audioLoading.classList.remove('hidden');
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: text }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Kore" }
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 16000;
+                    
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const wavBlob = pcmToWav(pcmData, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    
+                    const audio = new Audio(audioUrl);
+                    audio.play().catch(e => console.error("Audio playback failed:", e));
+
+                    audio.onended = () => {
+                        playButton.classList.remove('hidden');
+                        audioLoading.classList.add('hidden');
+                    };
+                } else {
+                    console.error("Invalid audio response format");
+                }
+            } catch (error) {
+                console.error('Error fetching from Gemini TTS API:', error);
+                playButton.classList.remove('hidden');
+                audioLoading.classList.add('hidden');
             }
         }
         
