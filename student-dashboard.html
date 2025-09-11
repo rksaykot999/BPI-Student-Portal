@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Inter', sans-serif; background: #f0f4f8; }
+    .card {
+        background: #ffffff;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 25px -5px rgba(0,0,0,0.15), 0 10px 10px -5px rgba(0,0,0,0.1);
+    }
+    th, td { text-align: left; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-10">
+    <h1 class="text-3xl font-bold text-gray-800">Student Dashboard</h1>
+    <button id="logoutBtn" class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition">Log Out</button>
+</header>
+
+<!-- Main Content -->
+<main class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    <!-- Student Info Card -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Student Info</h2>
+        <div id="studentInfo" class="text-gray-700 text-base space-y-2">
+            Loading...
+        </div>
+    </div>
+
+    <!-- Results Card -->
+    <div class="card md:col-span-2">
+        <h2 class="text-xl font-semibold mb-4">Results</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full rounded-lg overflow-hidden">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="p-3">Subject</th>
+                        <th class="p-3">Marks</th>
+                        <th class="p-3">Grade</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody" class="bg-white divide-y divide-gray-200">
+                    <tr><td colspan="3" class="p-3 text-center text-gray-500">Loading results...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Attendance Card -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Attendance</h2>
+        <p id="attendanceText" class="text-gray-700 text-lg mb-2">Loading...</p>
+        <div class="w-full bg-gray-200 h-5 rounded-full">
+            <div id="attendanceBar" class="bg-blue-600 h-5 rounded-full transition-all duration-500" style="width:0%"></div>
+        </div>
+    </div>
+
+    <!-- Performance Card -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Performance</h2>
+        <p id="performanceInfo" class="text-gray-700 text-base">Loading...</p>
+    </div>
+
+    <!-- Notices -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Notices</h2>
+        <ul id="noticesList" class="list-disc list-inside text-gray-700 space-y-1">
+            <li>Loading...</li>
+        </ul>
+    </div>
+
+    <!-- Upcoming Exams -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Upcoming Exams</h2>
+        <ul id="examsList" class="list-disc list-inside text-gray-700 space-y-1">
+            <li>Loading...</li>
+        </ul>
+    </div>
+
+    <!-- Assignments -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Assignments</h2>
+        <ul id="assignmentsList" class="list-disc list-inside text-gray-700 space-y-1">
+            <li>Loading...</li>
+        </ul>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Quick Links</h2>
+        <ul class="list-disc list-inside text-gray-700 space-y-2">
+            <li><a href="#" class="text-blue-600 hover:underline">Library</a></li>
+            <li><a href="#" class="text-blue-600 hover:underline">Timetable</a></li>
+            <li><a href="#" class="text-blue-600 hover:underline">Feedback</a></li>
+        </ul>
+    </div>
+
+</main>
+
+<script>
+    const studentId = localStorage.getItem('studentId');
+    const API_BASE = 'http://localhost:3000';
+
+    if(!studentId){
+        window.location.href = 'login.html';
+    }
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('studentId');
+        localStorage.removeItem('studentName');
+        window.location.href = 'login.html';
+    });
+
+    async function fetchStudentData(){
+        try {
+            const res = await fetch(`${API_BASE}/api/student/${studentId}`);
+            if(!res.ok) throw new Error('Network response not ok');
+            const data = await res.json();
+
+            // Student Info
+            const infoDiv = document.getElementById('studentInfo');
+            infoDiv.innerHTML = `
+                <p><strong>Name:</strong> ${data.name}</p>
+                <p><strong>Roll No:</strong> ${data.roll_no}</p>
+                <p><strong>Class:</strong> ${data.class}</p>
+            `;
+
+            // Results
+            const resultsBody = document.getElementById('resultsBody');
+            if(data.results && data.results.length){
+                resultsBody.innerHTML = '';
+                data.results.forEach(r => {
+                    const row = `<tr>
+                        <td class="p-3">${r.subject}</td>
+                        <td class="p-3">${r.marks}</td>
+                        <td class="p-3">${r.grade}</td>
+                    </tr>`;
+                    resultsBody.innerHTML += row;
+                });
+            } else {
+                resultsBody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-gray-500">No results available</td></tr>';
+            }
+
+            // Attendance
+            const percentage = data.attendance ? ((data.attendance.present/data.attendance.total)*100).toFixed(1) : 0;
+            document.getElementById('attendanceText').textContent = `${percentage}% Attendance`;
+            const bar = document.getElementById('attendanceBar');
+            bar.style.width = percentage + '%';
+            bar.style.backgroundColor = percentage >= 80 ? '#22c55e' : '#f97316';
+
+            // Performance
+            const perfDiv = document.getElementById('performanceInfo');
+            if(data.performance){
+                perfDiv.innerHTML = `
+                    <p><strong>Remarks:</strong> ${data.performance.remarks}</p>
+                    <p><strong>Rating:</strong> ${data.performance.rating}/10</p>
+                `;
+            } else {
+                perfDiv.textContent = 'No performance data available';
+            }
+
+            // Notices
+            const notices = document.getElementById('noticesList');
+            notices.innerHTML = '';
+            if(data.notices && data.notices.length){
+                data.notices.forEach(n => {
+                    notices.innerHTML += `<li>${n}</li>`;
+                });
+            } else {
+                notices.innerHTML = '<li>No new notices</li>';
+            }
+
+            // Exams
+            const exams = document.getElementById('examsList');
+            exams.innerHTML = '';
+            if(data.exams && data.exams.length){
+                data.exams.forEach(e => {
+                    exams.innerHTML += `<li>${e}</li>`;
+                });
+            } else {
+                exams.innerHTML = '<li>No upcoming exams</li>';
+            }
+
+            // Assignments
+            const assignments = document.getElementById('assignmentsList');
+            assignments.innerHTML = '';
+            if(data.assignments && data.assignments.length){
+                data.assignments.forEach(a => {
+                    assignments.innerHTML += `<li>${a}</li>`;
+                });
+            } else {
+                assignments.innerHTML = '<li>No pending assignments</li>';
+            }
+
+        } catch(err){
+            console.error(err);
+            alert('Failed to fetch student data.');
+        }
+    }
+
+    fetchStudentData();
+</script>
+
+</body>
+</html>

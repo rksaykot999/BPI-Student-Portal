@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard - BPI Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', sans-serif; background: #f0f4f8; }
+.bg-hero { background: linear-gradient(135deg, #16a34a, #0891b2); }
+.card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.card:hover { transform: translateY(-5px); box-shadow: 0 15px 25px rgba(0,0,0,0.1); }
+table th, table td { text-align: left; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Navbar -->
+<nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-gray-800">BPI Portal - Teacher Dashboard</h1>
+        <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">Logout</button>
+    </div>
+</nav>
+
+<!-- Welcome Hero -->
+<div class="bg-hero text-white py-12 text-center">
+    <h2 class="text-3xl font-bold mb-2">Welcome, <span id="teacherName">Teacher</span></h2>
+    <p class="text-lg">Manage your classes, students, and view results.</p>
+</div>
+
+<!-- Dashboard Cards -->
+<div class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="bg-white rounded-xl shadow p-6 text-center card">
+        <h3 class="text-xl font-semibold mb-2">Total Students</h3>
+        <p class="text-3xl font-bold text-green-600" id="totalStudents">0</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-6 text-center card">
+        <h3 class="text-xl font-semibold mb-2">Pending Results</h3>
+        <p class="text-3xl font-bold text-yellow-500" id="pendingResults">0</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-6 text-center card">
+        <h3 class="text-xl font-semibold mb-2">Classes</h3>
+        <p class="text-3xl font-bold text-blue-500" id="totalClasses">0</p>
+    </div>
+</div>
+
+<!-- Recent Students Table -->
+<div class="max-w-7xl mx-auto px-4 py-8 bg-white rounded-xl shadow overflow-x-auto">
+    <h3 class="text-2xl font-bold mb-4">Recent Students</h3>
+    <table class="min-w-full border border-gray-200">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="py-2 px-4 border-b">Roll No</th>
+                <th class="py-2 px-4 border-b">Name</th>
+                <th class="py-2 px-4 border-b">Class</th>
+                <th class="py-2 px-4 border-b">Email</th>
+            </tr>
+        </thead>
+        <tbody id="studentTableBody">
+            <tr><td colspan="4" class="p-4 text-center text-gray-500">Loading students...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:3000';
+
+// Check login
+const teacherId = localStorage.getItem('teacherId');
+if (!teacherId) {
+    alert('Please login first!');
+    window.location.href = '/teacher-login.html';
+}
+
+const teacherNameEl = document.getElementById('teacherName');
+const totalStudentsEl = document.getElementById('totalStudents');
+const pendingResultsEl = document.getElementById('pendingResults');
+const totalClassesEl = document.getElementById('totalClasses');
+const studentTableBody = document.getElementById('studentTableBody');
+const logoutBtn = document.getElementById('logoutBtn');
+
+// Logout
+logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('teacherId');
+    window.location.href = '/teacher-login.html';
+});
+
+// Load dashboard
+async function loadDashboard() {
+    try {
+        teacherNameEl.textContent = localStorage.getItem('teacherName') || 'Teacher';
+
+        const res = await fetch(`${API_BASE}/api/students`);
+        const data = await res.json();
+
+        const students = data.students || [];
+        totalStudentsEl.textContent = students.length;
+        pendingResultsEl.textContent = 0; // Optional logic
+        totalClassesEl.textContent = new Set(students.map(s => s.class)).size;
+
+        studentTableBody.innerHTML = '';
+        if (students.length > 0) {
+            students.forEach(student => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b">${student.roll_no}</td>
+                    <td class="py-2 px-4 border-b">${student.name}</td>
+                    <td class="py-2 px-4 border-b">${student.class}</td>
+                    <td class="py-2 px-4 border-b">${student.email}</td>
+                `;
+                studentTableBody.appendChild(row);
+            });
+        } else {
+            studentTableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No students found</td></tr>';
+        }
+
+    } catch (err) {
+        console.error(err);
+        studentTableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading students</td></tr>';
+    }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
