@@ -91,11 +91,11 @@
 
             <!-- Main Content -->
             <main class="p-6 md:p-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <!-- Loading Indicator -->
-                <div id="loading" class="col-span-full text-center py-12 text-gray-500 font-medium hidden">
-                    Loading student data...
+                <!-- Demo Mode Warning -->
+                <div id="demo-warning" class="col-span-full text-center py-2 bg-yellow-100 text-yellow-800 text-sm rounded-xl mb-4 hidden">
+                    <p>⚠️ Demo Mode: Data is not saved.</p>
                 </div>
-                
+
                 <!-- Student Info Card -->
                 <div id="student-info-card" class="bg-gray-50 p-6 rounded-2xl shadow-sm border border-gray-200 hidden">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -212,12 +212,7 @@
         </div>
     </div>
 
-    <script type="module">
-        // Import Firebase libraries
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
+    <script>
         // Helper functions for TTS
         function base64ToArrayBuffer(base64) {
             const binaryString = atob(base64);
@@ -288,133 +283,57 @@
             }, 5000);
         }
 
-        // --- Firebase & Main App Logic ---
+        // --- Demo Data & Main App Logic ---
         
-        let db, auth, userId;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // Initialize Firebase
-        if (Object.keys(firebaseConfig).length > 0) {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            
-            if (initialAuthToken) {
-                signInWithCustomToken(auth, initialAuthToken).catch(e => {
-                    console.error("Custom token sign-in failed:", e);
-                    signInAnonymously(auth);
-                });
-            } else {
-                signInAnonymously(auth);
-            }
-        } else {
-            showMessage("Firebase configuration is missing.");
-            console.error("Firebase config is not available.");
-        }
-        
-        // Listen for auth state changes
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                userId = user.uid;
-                document.getElementById('user-id-input').value = userId;
-                document.getElementById('login-button').textContent = "Continue";
-            } else {
-                userId = null;
-                document.getElementById('login-button').textContent = "Log In";
-            }
-        });
+        // Hardcoded sample student data
+        const sampleStudentData = {
+            name: 'Jane Doe',
+            studentId: '12345',
+            major: 'Computer Science',
+            enrollmentYear: 2023,
+            results: [
+                { subject: 'Physics', grade: 'B+', status: 'Passed' },
+                { subject: 'Chemistry', grade: 'A-', status: 'Passed' },
+                { subject: 'Mathematics', grade: 'C+', status: 'Passed' },
+                { subject: 'English', grade: 'B', status: 'Passed' },
+            ],
+            attendance: { attended: 15, total: 20 },
+            performance: { gpa: 3.2, lastGrade: 'B+' },
+            upcomingEvents: [
+                { title: 'Midterm Exam', date: 'October 15, 2024' },
+                { title: 'Project Submission', date: 'November 1, 2024' },
+            ],
+        };
 
         // Add login event listener
         document.getElementById('login-button').addEventListener('click', () => {
             const userIdInput = document.getElementById('user-id-input').value.trim();
             const passwordInput = document.getElementById('password-input').value.trim();
             const loginMessage = document.getElementById('login-message');
-
+            
             // Hardcoded password check for a simple demo
-            if (passwordInput === 'password') {
-                if (userIdInput === userId) {
-                    loginMessage.classList.add('hidden');
-                    showDashboard(userIdInput);
-                } else {
-                    loginMessage.textContent = "Invalid User ID for this session.";
-                    loginMessage.classList.remove('hidden');
-                }
+            if (passwordInput === 'demo') {
+                loginMessage.classList.add('hidden');
+                showDashboard(userIdInput);
             } else {
-                loginMessage.textContent = "Invalid password.";
+                loginMessage.textContent = "Invalid password. Use 'demo'.";
                 loginMessage.classList.remove('hidden');
             }
         });
         
-        // Function to create a sample student data document
-        async function createSampleData(studentId) {
-            const studentDocRef = doc(db, 'artifacts', appId, 'users', studentId, 'studentData', 'profile');
-            const sampleData = {
-                name: 'Jane Doe',
-                studentId: studentId,
-                major: 'Computer Science',
-                enrollmentYear: 2023,
-                results: [
-                    { subject: 'Physics', grade: 'B+', status: 'Passed' },
-                    { subject: 'Chemistry', grade: 'A-', status: 'Passed' },
-                    { subject: 'Mathematics', grade: 'C+', status: 'Passed' },
-                    { subject: 'English', grade: 'B', status: 'Passed' },
-                ],
-                attendance: { attended: 15, total: 20 },
-                performance: { gpa: 3.2, lastGrade: 'B+' },
-                upcomingEvents: [
-                    { title: 'Midterm Exam', date: 'October 15, 2024' },
-                    { title: 'Project Submission', date: 'November 1, 2024' },
-                ],
-            };
-            try {
-                await setDoc(studentDocRef, sampleData);
-                console.log("Sample data created successfully.");
-                showMessage("Sample data created! The dashboard will now load.");
-            } catch (e) {
-                console.error("Error creating sample data:", e);
-                showMessage("Failed to create sample data. Please try again.");
-            }
-        }
-
-        // Function to show the dashboard and fetch data
+        // Function to show the dashboard and populate data
         function showDashboard(studentId) {
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('dashboard-section').classList.remove('hidden');
-            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('demo-warning').classList.remove('hidden');
             document.getElementById('user-id').textContent = studentId;
 
-            const studentDocRef = doc(db, 'artifacts', appId, 'users', studentId, 'studentData', 'profile');
-
-            onSnapshot(studentDocRef, (docSnap) => {
-                document.getElementById('loading').classList.add('hidden');
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    updateUI(data);
-                    document.getElementById('student-info-card').classList.remove('hidden');
-                    document.getElementById('results-card').classList.remove('hidden');
-                    document.getElementById('attendance-card').classList.remove('hidden');
-                    document.getElementById('performance-card').classList.remove('hidden');
-                    document.getElementById('events-card').classList.remove('hidden');
-                } else {
-                    document.getElementById('loading').innerHTML = `
-                        <p class="mb-4">Student data not found for this user ID.</p>
-                        <button id="create-data-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-300">
-                            Create Sample Data
-                        </button>
-                    `;
-                    document.getElementById('loading').classList.remove('hidden');
-                    document.getElementById('create-data-btn').addEventListener('click', () => {
-                        createSampleData(studentId);
-                    });
-                }
-            }, (error) => {
-                console.error("Error getting document:", error);
-                document.getElementById('loading').innerHTML = `<p class="text-red-500">An error occurred while loading data.</p>`;
-                document.getElementById('loading').classList.remove('hidden');
-                showMessage("An error occurred while loading data.");
-            });
+            updateUI(sampleStudentData);
+            document.getElementById('student-info-card').classList.remove('hidden');
+            document.getElementById('results-card').classList.remove('hidden');
+            document.getElementById('attendance-card').classList.remove('hidden');
+            document.getElementById('performance-card').classList.remove('hidden');
+            document.getElementById('events-card').classList.remove('hidden');
         }
         
         // Function to update the UI with data
@@ -573,8 +492,9 @@
                 
                 modalContent.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
                 audioControls.classList.remove('hidden');
-                document.getElementById('play-audio-btn').onclick = () => textToSpeech(text);
-                
+                window.textToSpeech = () => textToSpeech(text); // Make function globally accessible
+                document.getElementById('play-audio-btn').onclick = () => window.textToSpeech();
+
             } catch (error) {
                 modalContent.innerHTML = `<p class="text-red-500">Sorry, an error occurred while generating the analysis. Please try again.</p>`;
                 console.error('Error fetching from Gemini API:', error);
@@ -648,6 +568,11 @@
         document.getElementById('close-modal-btn').addEventListener('click', () => {
             document.getElementById('insight-modal').classList.add('hidden');
         });
+
+        // Make functions globally accessible for inline onclick
+        window.getSubjectStudyGuide = getSubjectStudyGuide;
+        window.getEventSuggestions = getEventSuggestions;
+        
     </script>
 </body>
 </html>
