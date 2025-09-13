@@ -3,119 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard</title>
+    <title>BPI Student Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
+
         .dashboard-card {
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 24px;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .text-gradient {
+            background-image: linear-gradient(45deg, #4F46E5, #9333EA);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        #results-table-body td,
+        #attendance-table-body td {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        #results-table-body tr:last-child td,
+        #attendance-table-body tr:last-child td {
+            border-bottom: none;
         }
     </style>
 </head>
-<body class="bg-gray-100">
+
+<body class="bg-gray-50">
     <div id="message-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-            <h3 id="modal-message" class="text-lg font-medium"></h3>
-            <button onclick="closeModal()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Close</button>
+        <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-sm w-full">
+            <h3 id="modal-message" class="text-xl font-bold text-gray-800 mb-4"></h3>
+            <button onclick="closeModal()"
+                class="px-6 py-2 bg-blue-600 text-white rounded-full shadow hover:bg-blue-700 transition-colors duration-200">Close</button>
         </div>
     </div>
 
     <div class="min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="bg-white shadow p-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-800">Student Dashboard</h1>
+        <header class="bg-white shadow-sm p-4 flex flex-col sm:flex-row justify-between items-center sticky top-0 z-10">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2 sm:mb-0">Student Dashboard</h1>
             <div class="flex items-center space-x-4">
-                <span id="student-name" class="text-gray-600 font-medium"></span>
-                <button id="logout-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600 transition-colors duration-200">Logout</button>
+                <span id="student-name" class="hidden sm:block text-gray-600 font-medium"></span>
+                <button id="logout-btn"
+                    class="px-4 py-2 bg-red-500 text-white rounded-full shadow hover:bg-red-600 transition-colors duration-200">Logout</button>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="container mx-auto p-6 flex-grow">
-            <!-- Student Profile Section -->
-            <div class="dashboard-card mb-8">
-                <div class="flex items-center space-x-6">
-                    <img id="student-profile-pic" class="h-24 w-24 rounded-full border-4 border-gray-200" src="https://placehold.co/100x100/E5E7EB/4B5563?text=Student" alt="Student Profile Picture">
-                    <div>
-                        <h2 id="student-profile-name" class="text-3xl font-bold text-gray-800"></h2>
-                        <p class="text-lg text-gray-600">Roll: <span id="student-roll"></span> | Reg: <span id="student-reg"></span></p>
-                        <p class="text-md text-gray-500">Dept: <span id="student-dept"></span> | Sem: <span id="student-sem"></span></p>
+        <main class="container mx-auto p-4 sm:p-8 flex-grow">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                <div class="dashboard-card col-span-1 lg:col-span-2">
+                    <div
+                        class="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+                        <div class="relative group">
+                            <img id="student-profile-pic"
+                                class="h-40 w-40 rounded-full border-4 border-indigo-500 shadow-xl object-cover"
+                                src="https://placehold.co/160x160/E0E7FF/4338CA?text=S" alt="Student Profile Picture">
+                        </div>
+                        <div class="text-center md:text-left space-y-3">
+                            <h2 id="student-profile-name" class="text-5xl font-extrabold text-gradient"></h2>
+                            <div class="profile-info-group">
+                                <p class="text-lg text-gray-700">Roll: <span id="student-roll" class="font-bold"></span>
+                                </p>
+                                <p class="text-lg text-gray-700">Reg: <span id="student-reg" class="font-bold"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card flex flex-col justify-center">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4">Academic Info</h3>
+                    <div class="space-y-4 text-sm font-medium">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-building-columns text-xl text-indigo-500"></i>
+                            <span>Dept: <span id="student-dept" class="font-semibold text-gray-800"></span></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-calendar-alt text-xl text-indigo-500"></i>
+                            <span>Session: <span id="student-session" class="font-semibold text-gray-800"></span></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-book-open text-xl text-indigo-500"></i>
+                            <span>Sem: <span id="student-sem" class="font-semibold text-gray-800"></span></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-phone text-xl text-indigo-500"></i>
+                            <span>Phone: <span id="student-phone" class="font-semibold text-gray-800"></span></span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Dashboard Overview Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <div class="dashboard-card text-center">
-                    <h3 class="text-xl font-semibold text-gray-700">Total Marks</h3>
-                    <p id="total-marks" class="text-4xl font-bold text-blue-600 mt-2">0</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div class="dashboard-card text-center stat-card blue">
+                    <h3 class="text-xl font-semibold stat-card-title">Total Marks</h3>
+                    <p id="total-marks" class="stat-card-value mt-2 text-3xl font-bold text-blue-600">0</p>
                 </div>
-                <div class="dashboard-card text-center">
-                    <h3 class="text-xl font-semibold text-gray-700">Attendance</h3>
-                    <p id="total-attendance" class="text-4xl font-bold text-green-600 mt-2">0%</p>
+                <div class="dashboard-card text-center stat-card green">
+                    <h3 class="text-xl font-semibold stat-card-title">Attendance</h3>
+                    <p id="total-attendance" class="stat-card-value mt-2 text-3xl font-bold text-green-600">0%</p>
                 </div>
-                <div class="dashboard-card text-center">
-                    <h3 class="text-xl font-semibold text-gray-700">Total Courses</h3>
-                    <p id="total-courses" class="text-4xl font-bold text-yellow-600 mt-2">0</p>
-                </div>
-            </div>
-
-            <!-- Results Section -->
-            <div class="dashboard-card mb-8">
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">Exam Results</h3>
-                <div id="results-table-container" class="overflow-x-auto">
-                    <table class="min-w-full bg-white rounded-lg shadow-sm">
-                        <thead>
-                            <tr class="bg-gray-200 text-left text-gray-600">
-                                <th class="py-3 px-4 font-semibold">Course</th>
-                                <th class="py-3 px-4 font-semibold">Marks</th>
-                            </tr>
-                        </thead>
-                        <tbody id="results-table-body">
-                            <!-- Results will be rendered here dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="no-results-message" class="hidden text-center text-gray-500 py-8">
-                    <p>No exam results found.</p>
+                <div class="dashboard-card text-center stat-card purple">
+                    <h3 class="text-xl font-semibold stat-card-title">Total Subjects</h3>
+                    <p id="total-courses" class="stat-card-value mt-2 text-3xl font-bold text-purple-600">0</p>
                 </div>
             </div>
 
-            <!-- Attendance Section -->
-            <div class="dashboard-card mb-8">
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">Attendance Record</h3>
-                <div id="attendance-table-container" class="overflow-x-auto">
-                    <table class="min-w-full bg-white rounded-lg shadow-sm">
-                        <thead>
-                            <tr class="bg-gray-200 text-left text-gray-600">
-                                <th class="py-3 px-4 font-semibold">Date</th>
-                                <th class="py-3 px-4 font-semibold">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="attendance-table-body">
-                            <!-- Attendance records will be rendered here dynamically -->
-                        </tbody>
-                    </table>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="dashboard-card">
+                    <h3 class="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-500" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path
+                                d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                        </svg>
+                        Exam Results
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full rounded-xl overflow-hidden">
+                            <thead class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+                                <tr class="text-left text-sm font-semibold">
+                                    <th class="py-3 px-4">Subject</th>
+                                    <th class="py-3 px-4">Marks</th>
+                                    <th class="py-3 px-4">Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-table-body" class="bg-white">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="no-results-message" class="hidden text-center text-gray-500 py-8">
+                        <p>No exam results found.</p>
+                    </div>
                 </div>
-                <div id="no-attendance-message" class="hidden text-center text-gray-500 py-8">
-                    <p>No attendance records found.</p>
+
+                <div class="dashboard-card">
+                    <h3 class="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-500" viewBox="0 0 20 20"
+                            fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Attendance Record
+                    </h3>
+                    <div class="overflow-y-auto max-h-[30rem]">
+                        <table class="min-w-full rounded-xl overflow-hidden">
+                            <thead class="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                                <tr class="text-left text-sm font-semibold">
+                                    <th class="py-3 px-4">Date</th>
+                                    <th class="py-3 px-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body" class="bg-white">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="no-attendance-message" class="hidden text-center text-gray-500 py-8">
+                        <p>No attendance records found.</p>
+                    </div>
                 </div>
             </div>
+
+            <div class="dashboard-card mb-8">
+                <h3 class="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-2xl text-yellow-500"></i>
+                    Notifications & Announcements
+                </h3>
+                <ul id="announcement-list" class="space-y-4">
+                </ul>
+                <div id="no-announcements-message" class="hidden text-center text-gray-500 py-8">
+                    <p>No new announcements found.</p>
+                </div>
+            </div>
+
         </main>
 
-        <!-- Footer -->
-        <footer class="bg-gray-800 text-white text-center p-4 mt-6">
-            <p>&copy; 2024 BPI Portal. All rights reserved.</p>
+        <footer class="bg-gray-800 text-white text-center p-6 mt-8 rounded-t-3xl shadow-inner">
+            <p>&copy; 2024 BPI Student Portal. All rights reserved.</p>
         </footer>
     </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const logoutBtn = document.getElementById('logout-btn');
@@ -124,22 +212,26 @@
             const studentRollEl = document.getElementById('student-roll');
             const studentRegEl = document.getElementById('student-reg');
             const studentDeptEl = document.getElementById('student-dept');
+            const studentSessionEl = document.getElementById('student-session');
             const studentSemEl = document.getElementById('student-sem');
+            const studentPhoneEl = document.getElementById('student-phone');
             const totalMarksEl = document.getElementById('total-marks');
             const totalAttendanceEl = document.getElementById('total-attendance');
             const totalCoursesEl = document.getElementById('total-courses');
             const resultsTableBody = document.getElementById('results-table-body');
             const attendanceTableBody = document.getElementById('attendance-table-body');
-            const messageModal = document.getElementById('message-modal');
-            const modalMessage = document.getElementById('modal-message');
+            const announcementList = document.getElementById('announcement-list');
+            const noResultsMessage = document.getElementById('no-results-message');
+            const noAttendanceMessage = document.getElementById('no-attendance-message');
+            const noAnnouncementsMessage = document.getElementById('no-announcements-message');
 
             function showModal(message) {
-                modalMessage.textContent = message;
-                messageModal.classList.remove('hidden');
+                document.getElementById('modal-message').textContent = message;
+                document.getElementById('message-modal').classList.remove('hidden');
             }
 
-            window.closeModal = function() {
-                messageModal.classList.add('hidden');
+            window.closeModal = function () {
+                document.getElementById('message-modal').classList.add('hidden');
             }
 
             // Get student ID from URL
@@ -148,11 +240,10 @@
 
             if (!studentId) {
                 showModal('Student ID is missing. Redirecting to login.');
-                setTimeout(() => window.location.href = '/', 2000);
+                setTimeout(() => window.location.href = '/student-login.html', 2000);
                 return;
             }
 
-            // Fetch student data
             async function fetchStudentData() {
                 try {
                     const response = await fetch(`/student-dashboard-data/${studentId}`);
@@ -161,70 +252,117 @@
                         return;
                     }
                     const data = await response.json();
-                    
                     const { student, results, attendance } = data;
+                    
+                    if (student) {
+                        studentNameEl.textContent = `Welcome, ${student.name}`;
+                        studentProfileNameEl.textContent = student.name;
+                        document.getElementById('student-profile-pic').src = `https://placehold.co/160x160/E0E7FF/4338CA?text=${student.name.charAt(0).toUpperCase()}`;
+                        studentRollEl.textContent = student.roll_number;
+                        studentRegEl.textContent = student.registration_number;
+                        studentDeptEl.textContent = student.department;
+                        studentSessionEl.textContent = student.session;
+                        studentSemEl.textContent = student.semester;
+                        studentPhoneEl.textContent = student.phone_number;
+                    }
 
-                    // Update profile info
-                    studentNameEl.textContent = `Welcome, ${student.name}`;
-                    studentProfileNameEl.textContent = student.name;
-                    studentRollEl.textContent = student.roll_number;
-                    studentRegEl.textContent = student.registration_number;
-                    studentDeptEl.textContent = student.department;
-                    studentSemEl.textContent = student.semester;
-
-                    // Calculate and display summary stats
-                    let totalMarks = 0;
+                    // Render Results Table and Stats
                     if (results && results.length > 0) {
-                        totalMarks = results.reduce((sum, result) => sum + result.marks, 0);
+                        const totalMarks = results.reduce((sum, result) => sum + result.marks, 0);
                         totalMarksEl.textContent = totalMarks;
                         totalCoursesEl.textContent = results.length;
                         renderResults(results);
+                        noResultsMessage.classList.add('hidden');
                     } else {
-                        document.getElementById('no-results-message').classList.remove('hidden');
+                        resultsTableBody.innerHTML = '';
+                        totalMarksEl.textContent = '0';
+                        totalCoursesEl.textContent = '0';
+                        noResultsMessage.classList.remove('hidden');
                     }
 
+                    // Render Attendance Table and Stats
                     if (attendance && attendance.length > 0) {
                         const totalClasses = attendance.length;
                         const presentClasses = attendance.filter(record => record.status === 'Present').length;
-                        const attendancePercentage = (presentClasses / totalClasses) * 100;
+                        const attendancePercentage = (totalClasses > 0) ? (presentClasses / totalClasses) * 100 : 0;
                         totalAttendanceEl.textContent = `${attendancePercentage.toFixed(2)}%`;
                         renderAttendance(attendance);
+                        noAttendanceMessage.classList.add('hidden');
                     } else {
-                         document.getElementById('no-attendance-message').classList.remove('hidden');
+                        attendanceTableBody.innerHTML = '';
+                        totalAttendanceEl.textContent = '0%';
+                        noAttendanceMessage.classList.remove('hidden');
                     }
                     
+                    // Fetch and render announcements
+                    await fetchAnnouncements();
+
                 } catch (error) {
                     console.error('Error fetching student data:', error);
                     showModal('An error occurred. Please try again later.');
                 }
             }
 
-            // Render results table
+            async function fetchAnnouncements() {
+                try {
+                    const response = await fetch('/announcements');
+                    if (!response.ok) {
+                        console.error('Failed to fetch announcements.');
+                        return;
+                    }
+                    const announcements = await response.json();
+                    if (announcements && announcements.length > 0) {
+                        renderAnnouncements(announcements);
+                        noAnnouncementsMessage.classList.add('hidden');
+                    } else {
+                        announcementList.innerHTML = '';
+                        noAnnouncementsMessage.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error fetching announcements:', error);
+                }
+            }
+
             function renderResults(results) {
                 resultsTableBody.innerHTML = '';
                 results.forEach(result => {
                     const row = document.createElement('tr');
                     row.className = 'border-b border-gray-200 hover:bg-gray-100';
                     row.innerHTML = `
-                        <td class="py-3 px-4">${result.course}</td>
+                        <td class="py-3 px-4">${result.subject}</td>
                         <td class="py-3 px-4">${result.marks}</td>
+                        <td class="py-3 px-4">${result.grade}</td>
                     `;
                     resultsTableBody.appendChild(row);
                 });
             }
 
-            // Render attendance table
             function renderAttendance(attendance) {
                 attendanceTableBody.innerHTML = '';
                 attendance.forEach(record => {
+                    const date = new Date(record.attendance_date).toLocaleDateString('en-GB');
                     const row = document.createElement('tr');
                     row.className = 'border-b border-gray-200 hover:bg-gray-100';
                     const statusColor = record.status === 'Present' ? 'text-green-500' : 'text-red-500';
                     row.innerHTML = `
-                        <td class="py-3 px-4">${record.date}</td>
+                        <td class="py-3 px-4">${date}</td>
                         <td class="py-3 px-4"><span class="${statusColor}">${record.status}</span></td>
                     `;
                     attendanceTableBody.appendChild(row);
+                });
+            }
+
+            function renderAnnouncements(announcements) {
+                announcementList.innerHTML = '';
+                announcements.forEach(announcement => {
+                    const li = document.createElement('li');
+                    li.className = 'bg-gray-50 p-4 rounded-xl shadow-inner border-l-4 border-yellow-500';
+                    const date = new Date(announcement.created_at).toLocaleDateString('en-GB');
+                    li.innerHTML = `
+                        <h4 class="font-bold text-gray-800">${announcement.title} <span class="text-xs text-gray-500 ml-2">${date}</span></h4>
+                        <p class="text-gray-600 mt-1">${announcement.content}</p>
+                    `;
+                    announcementList.appendChild(li);
                 });
             }
 
