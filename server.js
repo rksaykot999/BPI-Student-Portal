@@ -1,140 +1,245 @@
-// server.js
+// Load environment variables from .env file
+require('dotenv').config();
+
+// Import necessary modules
 const express = require('express');
 const mysql = require('mysql2/promise');
-const bodyParser = require('body-parser');
-const cors = require('cors');
 const path = require('path');
-
 const app = express();
-const PORT = 3000;
+const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
+// Enable JSON body parsing for incoming requests
+app.use(express.json());
+
+// Serve static files (HTML, CSS, JS) from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MySQL Connection Pool
+// Database connection pool setup
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: 'rksaykot', // আপনার MySQL password
-    database: 'bpi_portal',
-    port: 3306,
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 });
 
-// Test DB Connection
-async function testDbConnection() {
+// Helper function for making API calls to Gemini
+async function getGeminiAnalysis(prompt) {
+    const systemPrompt = "You are an educational AI assistant. Provide a concise, professional, and empathetic analysis of a student's academic performance and suggestions for improvement. The analysis should be based on the provided student data.";
+    const userQuery = prompt;
+    const apiKey = ""; // Canvas will provide this in runtime
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+    const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+    };
+
     try {
-        const connection = await pool.getConnection();
-        console.log('✅ Connected to MySQL database.');
-        connection.release();
-    } catch (err) {
-        console.error('❌ DB connection error:', err);
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            console.error('API call failed with status:', response.status);
+            return 'Could not generate report at this time.';
+        }
+
+        const result = await response.json();
+        const candidate = result.candidates?.[0];
+        if (candidate && candidate.content?.parts?.[0]?.text) {
+            return candidate.content.parts[0].text;
+        } else {
+            return 'No analysis available.';
+        }
+    } catch (error) {
+        console.error("Gemini API call error:", error);
+        return 'An error occurred while generating the report.';
     }
 }
-testDbConnection();
 
-// ---------------- Routes ---------------- //
+//--- ROUTES ---
 
-// Home
+// Route to serve the index.html file for the root URL
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Teacher Login
-app.post('/api/teacher-login', async (req, res) => {
+// Teacher Login Route
+app.post('/teacher-login', async (req, res) => {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ success: false, message: 'Email & password required' });
-
+    console.log('Received teacher login request with:', { email, password }); // Log the input
+    let connection;
     try {
-        const [results] = await pool.query(
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute(
             'SELECT * FROM teachers WHERE email = ? AND password = ?',
             [email, password]
         );
 
-        if (results.length === 0) return res.json({ success: false, message: 'Invalid credentials' });
-        res.json({ success: true, teacher: results[0] });
-    } catch (err) {
-        console.error('Teacher login error:', err);
-        res.status(500).json({ success: false, message: 'DB error' });
+        if (rows.length > 0) {
+            // Note: In a real-world app, you would use sessions here.
+            // For now, a simple success response is enough for the front-end to proceed.
+            res.status(200).json({ message: 'Login successful' });
+        } else {
+            res.status(401).json({ message: 'Invalid email or password' });
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error during login' });
+    } finally {
+        if (connection) connection.release();
     }
 });
 
-// Student Login
-app.post('/api/student-login', async (req, res) => {
-    const { identifier, password } = req.body;
-    if (!identifier || !password) return res.status(400).json({ success: false, message: 'Roll number & registration number required' });
-
+// Student Login Route
+app.post('/student-login', async (req, res) => {
+    const { roll_number, registration_number } = req.body;
+    console.log('Received student login request with:', { roll_number, registration_number }); // Log the input
+    let connection;
     try {
-        const [results] = await pool.query(
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute(
             'SELECT * FROM student WHERE roll_number = ? AND registration_number = ?',
-            [identifier, password]
+            [roll_number, registration_number]
         );
 
-        if (results.length === 0) return res.json({ success: false, message: 'Invalid credentials' });
-        res.json({ success: true, student: results[0] });
-    } catch (err) {
-        console.error('Student login error:', err);
-        res.status(500).json({ success: false, message: 'DB error' });
+        if (rows.length > 0) {
+            // Login successful
+            res.status(200).json({ message: 'Login successful', student: rows[0] });
+        } else {
+            // Invalid credentials
+            res.status(401).json({ message: 'Invalid roll number or registration number' });
+        }
+    } catch (error) {
+        console.error('Student login error:', error.message); // Updated for more specific error
+        res.status(500).json({ message: 'Server error during student login' });
+    } finally {
+        if (connection) connection.release();
     }
 });
 
-// ---------------- Get All Students (For Teacher Dashboard) ---------------- //
-app.get('/api/students', async (req, res) => {
+// Dashboard Data Route
+app.get('/dashboard-data', async (req, res) => {
+    console.log('Received teacher dashboard data request.'); // Log the request
+    let connection;
     try {
-        const [results] = await pool.query(
-            'SELECT id, roll_number, name, department, semester, registration_number FROM student ORDER BY id DESC'
-        );
-        res.json({ success: true, students: results });
-    } catch (err) {
-        console.error('Error fetching students:', err);
-        res.status(500).json({ success: false, message: 'DB error' });
-    }
-});
+        connection = await pool.getConnection();
 
-// ---------------- Get Single Student ---------------- //
-app.get('/api/student/:id', async (req, res) => {
-    const studentId = req.params.id;
-    try {
-        const [studentResults] = await pool.query('SELECT * FROM student WHERE id = ?', [studentId]);
-        if (studentResults.length === 0) return res.status(404).json({ success: false, message: 'Student not found' });
-        const student = studentResults[0];
+        // 1. Get total students count
+        const [studentCountResult] = await connection.execute('SELECT COUNT(*) AS totalStudents FROM student');
+        const totalStudents = studentCountResult[0].totalStudents;
 
-        const [resultsData] = await pool.query('SELECT subject, marks, grade, exam_type FROM results WHERE student_id = ?', [studentId]);
-        const [attendanceData] = await pool.query('SELECT attendance_date AS date, status FROM attendance WHERE student_id = ?', [studentId]);
-        const [performanceData] = await pool.query('SELECT remarks, rating FROM performance WHERE student_id = ?', [studentId]);
+        // 2. Get recent students data
+        const [recentStudents] = await connection.execute('SELECT id, name, roll_number, department, semester FROM student ORDER BY id DESC LIMIT 5');
 
-        const [noticesData] = await pool.query('SELECT title FROM notices ORDER BY created_at DESC LIMIT 5');
-        const [examsData] = await pool.query('SELECT exam_name AS name FROM exams ORDER BY exam_date ASC LIMIT 5');
-        const [assignmentsData] = await pool.query('SELECT title FROM assignments ORDER BY due_date ASC LIMIT 5');
+        // 3. Get total classes and pending results (for now, these are mock data)
+        const totalClasses = 3; // Placeholder data
+        const pendingResults = 1; // Placeholder data
+        const teacherName = "Mr. Shakib Khan"; // Placeholder name
 
-        res.json({
-            success: true,
-            student: {
-                id: student.id,
-                name: student.name,
-                roll_number: student.roll_number,
-                registration_number: student.registration_number,
-                department: student.department,
-                semester: student.semester,
-                session: student.session,
-                phone_number: student.phone_number
-            },
-            results: resultsData,
-            attendance: attendanceData,
-            performance: performanceData[0] || null,
-            notices: noticesData.map(n => n.title),
-            exams: examsData.map(e => e.name),
-            assignments: assignmentsData.map(a => a.title)
+        res.status(200).json({
+            teacherName,
+            totalStudents,
+            totalClasses,
+            pendingResults,
+            recentStudents
         });
-    } catch (err) {
-        console.error('Error fetching student data:', err);
-        res.status(500).json({ success: false, message: 'Error fetching data' });
+
+    } catch (error) {
+        console.error('Dashboard data fetch error:', error);
+        res.status(500).json({ message: 'Failed to fetch dashboard data' });
+    } finally {
+        if (connection) connection.release();
     }
 });
 
-// ---------------- Server Start ---------------- //
-app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+// Student Dashboard Data Route
+app.get('/student-dashboard-data/:id', async (req, res) => {
+    const studentId = req.params.id;
+    console.log('Received student dashboard data request for ID:', studentId); // Log the input
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [student] = await connection.execute('SELECT * FROM student WHERE id = ?', [studentId]);
+        const [results] = await connection.execute('SELECT * FROM results WHERE student_id = ?', [studentId]);
+        const [attendance] = await connection.execute('SELECT * FROM attendance WHERE student_id = ?', [studentId]);
+
+        if (student.length > 0) {
+            res.status(200).json({
+                student: student[0],
+                results: results,
+                attendance: attendance,
+            });
+        } else {
+            res.status(404).json({ message: 'Student not found.' });
+        }
+    } catch (error) {
+        console.error('Student dashboard data fetch error:', error.message); // Updated for more specific error
+        res.status(500).json({ message: 'Failed to fetch student data.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// AI Analysis Route
+app.post('/ai-analysis', async (req, res) => {
+    const { student_id } = req.body;
+    console.log('Received AI analysis request for student ID:', student_id); // Log the input
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        // Fetch student data from DB
+        const [studentData] = await connection.execute('SELECT * FROM student WHERE id = ?', [student_id]);
+        
+        // Fetch student results, attendance, and performance from DB
+        const [results] = await connection.execute('SELECT * FROM results WHERE student_id = ?', [student_id]);
+        const [attendance] = await connection.execute('SELECT * FROM attendance WHERE student_id = ?', [student_id]);
+        const [performance] = await connection.execute('SELECT * FROM performance WHERE student_id = ?', [student_id]);
+
+        if (studentData.length === 0) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+        const student = studentData[0];
+
+        // Construct a detailed prompt for the AI model
+        const prompt = `Generate a detailed academic and behavioral analysis for the following student.
+Student Name: ${student.name}
+Roll Number: ${student.roll_number}
+Department: ${student.department}
+Semester: ${student.semester}
+Academic Results: ${JSON.stringify(results)}
+Attendance Record: ${JSON.stringify(attendance)}
+Performance Remarks: ${JSON.stringify(performance)}
+`;
+        
+        // Call the Gemini API for analysis
+        const analysisReport = await getGeminiAnalysis(prompt);
+
+        res.status(200).json({ report: analysisReport });
+
+    } catch (error) {
+        console.error('AI Analysis error:', error);
+        res.status(500).json({ message: 'Failed to generate AI analysis report' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// Logout Route
+app.post('/logout', (req, res) => {
+    // In a real app, you would destroy the session here.
+    // For this example, we just send a success message.
+    console.log('Received logout request.'); // Log the request
+    res.status(200).json({ message: 'Logout successful' });
+});
+
+// Start the server
+app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+});

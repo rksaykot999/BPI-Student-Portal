@@ -218,26 +218,20 @@
 </footer>
 
 <script>
-    const logoButton = document.getElementById('logoButton');
+    // Get the button and the dropdown menu elements
+    const loginButton = document.getElementById('logoButton');
     const loginDropdown = document.getElementById('loginDropdown');
 
-    // Function to toggle the dropdown
-    function toggleDropdown() {
+    // Toggle the dropdown menu on button click
+    loginButton.addEventListener('click', (event) => {
         loginDropdown.classList.toggle('show');
-    }
-
-    // Button click event listener
-    logoButton.addEventListener('click', (event) => {
-        event.stopPropagation(); // Prevents the event from propagating to the window
-        toggleDropdown();
+        event.stopPropagation(); // Prevents the window click event from firing immediately
     });
 
-    // Logic to close the dropdown when clicking outside
+    // Hide the dropdown when clicking outside of it
     window.addEventListener('click', (event) => {
-        if (!loginDropdown.contains(event.target) && !logoButton.contains(event.target)) {
-            if (loginDropdown.classList.contains('show')) {
-                toggleDropdown();
-            }
+        if (!loginDropdown.contains(event.target) && !loginButton.contains(event.target)) {
+            loginDropdown.classList.remove('show');
         }
     });
 </script>

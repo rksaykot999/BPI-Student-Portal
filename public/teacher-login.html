@@ -45,5 +45,45 @@
     </div>
 </div>
 
+<script>
+    const teacherLoginForm = document.getElementById('teacherLoginForm');
+    const emailInput = document.getElementById('teacher-email');
+    const passwordInput = document.getElementById('teacher-password');
+    const loginMessage = document.getElementById('teacherLoginMessage');
+
+    teacherLoginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = emailInput.value;
+        const password = passwordInput.value;
+
+        loginMessage.textContent = 'Logging in...';
+        loginMessage.className = 'text-center mt-4 text-sm font-semibold text-gray-500';
+
+        try {
+            const response = await fetch('/teacher-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                loginMessage.textContent = 'Login successful!';
+                loginMessage.className = 'text-center mt-4 text-sm font-semibold text-green-600';
+                window.location.href = 'teacher-dashboard.html';
+            } else {
+                loginMessage.textContent = result.message || 'Login failed. Please check your credentials.';
+                loginMessage.className = 'text-center mt-4 text-sm font-semibold text-red-600';
+            }
+
+        } catch (error) {
+            console.error("Network or server error:", error);
+            loginMessage.textContent = 'An error occurred. Please try again later.';
+            loginMessage.className = 'text-center mt-4 text-sm font-semibold text-red-600';
+        }
+    });
+</script>
+
 </body>
 </html>
