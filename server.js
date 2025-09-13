@@ -1,5 +1,6 @@
+// server.js
 const express = require('express');
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
@@ -10,118 +11,130 @@ const PORT = 3000;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-
-// Serve static HTML
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MySQL Connection
-const db = mysql.createConnection({
+// MySQL Connection Pool
+const pool = mysql.createPool({
     host: 'localhost',
     user: 'root',
-    password: 'rksaykot',   // <-- your password
-    database: 'bpistudentportal',
-    port: 3306
+    password: 'rksaykot', // আপনার MySQL password
+    database: 'bpi_portal',
+    port: 3306,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-db.connect(err => {
-    if(err) {
-        console.error('DB connection error:', err);
-        return;
+// Test DB Connection
+async function testDbConnection() {
+    try {
+        const connection = await pool.getConnection();
+        console.log('✅ Connected to MySQL database.');
+        connection.release();
+    } catch (err) {
+        console.error('❌ DB connection error:', err);
     }
-    console.log('Connected to MySQL database.');
-});
+}
+testDbConnection();
 
-// ----------- Routes -----------
+// ---------------- Routes ---------------- //
 
-// Home route
+// Home
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Teacher Login
-app.post('/api/teacher-login', (req, res) => {
+app.post('/api/teacher-login', async (req, res) => {
     const { email, password } = req.body;
-    if(!email || !password) return res.status(400).json({ success:false, message:'Email & password required' });
+    if (!email || !password) return res.status(400).json({ success: false, message: 'Email & password required' });
 
-    db.query('SELECT * FROM teachers WHERE email = ? AND password = ?', [email, password], (err, results) => {
-        if(err) return res.status(500).json({ success:false, message:'DB error' });
-        if(results.length === 0) return res.json({ success:false, message:'Invalid credentials' });
-        res.json({ success:true, teacher: results[0] });
-    });
+    try {
+        const [results] = await pool.query(
+            'SELECT * FROM teachers WHERE email = ? AND password = ?',
+            [email, password]
+        );
+
+        if (results.length === 0) return res.json({ success: false, message: 'Invalid credentials' });
+        res.json({ success: true, teacher: results[0] });
+    } catch (err) {
+        console.error('Teacher login error:', err);
+        res.status(500).json({ success: false, message: 'DB error' });
+    }
 });
 
 // Student Login
-app.post('/api/student-login', (req, res) => {
+app.post('/api/student-login', async (req, res) => {
     const { identifier, password } = req.body;
-    if(!identifier || !password) return res.status(400).json({ success:false, message:'Identifier & password required' });
+    if (!identifier || !password) return res.status(400).json({ success: false, message: 'Roll number & registration number required' });
 
-    db.query('SELECT * FROM students WHERE (roll_no = ? OR email = ?) AND password = ?', [identifier, identifier, password], (err, results) => {
-        if(err) return res.status(500).json({ success:false, message:'DB error' });
-        if(results.length === 0) return res.json({ success:false, message:'Invalid credentials' });
-        res.json({ success:true, student: results[0] });
-    });
+    try {
+        const [results] = await pool.query(
+            'SELECT * FROM student WHERE roll_number = ? AND registration_number = ?',
+            [identifier, password]
+        );
+
+        if (results.length === 0) return res.json({ success: false, message: 'Invalid credentials' });
+        res.json({ success: true, student: results[0] });
+    } catch (err) {
+        console.error('Student login error:', err);
+        res.status(500).json({ success: false, message: 'DB error' });
+    }
 });
 
-// Get all students (teacher dashboard)
-app.get('/api/students', (req, res) => {
-    db.query('SELECT id, roll_no, name, class, email FROM students ORDER BY id DESC', (err, results) => {
-        if(err) return res.status(500).json({ success:false, message:'DB error' });
-        res.json({ students: results });
-    });
+// ---------------- Get All Students (For Teacher Dashboard) ---------------- //
+app.get('/api/students', async (req, res) => {
+    try {
+        const [results] = await pool.query(
+            'SELECT id, roll_number, name, department, semester, registration_number FROM student ORDER BY id DESC'
+        );
+        res.json({ success: true, students: results });
+    } catch (err) {
+        console.error('Error fetching students:', err);
+        res.status(500).json({ success: false, message: 'DB error' });
+    }
 });
 
-// Get single student data
-app.get('/api/student/:id', (req, res) => {
+// ---------------- Get Single Student ---------------- //
+app.get('/api/student/:id', async (req, res) => {
     const studentId = req.params.id;
-    db.query('SELECT id, roll_no, name, class, email FROM students WHERE id = ?', [studentId], (err, studentResults) => {
-        if(err || studentResults.length === 0) return res.status(404).json({ message:'Student not found' });
+    try {
+        const [studentResults] = await pool.query('SELECT * FROM student WHERE id = ?', [studentId]);
+        if (studentResults.length === 0) return res.status(404).json({ success: false, message: 'Student not found' });
         const student = studentResults[0];
 
-        // Fetch results
-        db.query('SELECT subject, marks, grade FROM results WHERE student_id = ?', [studentId], (err, resultsData) => {
-            if(err) return res.status(500).json({ message:'Error fetching results' });
+        const [resultsData] = await pool.query('SELECT subject, marks, grade, exam_type FROM results WHERE student_id = ?', [studentId]);
+        const [attendanceData] = await pool.query('SELECT attendance_date AS date, status FROM attendance WHERE student_id = ?', [studentId]);
+        const [performanceData] = await pool.query('SELECT remarks, rating FROM performance WHERE student_id = ?', [studentId]);
 
-            // Fetch attendance
-            db.query('SELECT present, total FROM attendance WHERE student_id = ?', [studentId], (err, attendanceData) => {
-                if(err) return res.status(500).json({ message:'Error fetching attendance' });
+        const [noticesData] = await pool.query('SELECT title FROM notices ORDER BY created_at DESC LIMIT 5');
+        const [examsData] = await pool.query('SELECT exam_name AS name FROM exams ORDER BY exam_date ASC LIMIT 5');
+        const [assignmentsData] = await pool.query('SELECT title FROM assignments ORDER BY due_date ASC LIMIT 5');
 
-                // Fetch performance
-                db.query('SELECT remarks, rating FROM performance WHERE student_id = ?', [studentId], (err, performanceData) => {
-                    if(err) return res.status(500).json({ message:'Error fetching performance' });
-
-                    // Notices
-                    db.query('SELECT title FROM notices ORDER BY created_at DESC LIMIT 5', (err, noticesData) => {
-                        if(err) return res.status(500).json({ message:'Error fetching notices' });
-
-                        // Exams
-                        db.query('SELECT exam_name FROM exams ORDER BY date ASC LIMIT 5', (err, examsData) => {
-                            if(err) return res.status(500).json({ message:'Error fetching exams' });
-
-                            // Assignments
-                            db.query('SELECT title FROM assignments ORDER BY due_date ASC LIMIT 5', (err, assignmentsData) => {
-                                if(err) return res.status(500).json({ message:'Error fetching assignments' });
-
-                                res.json({
-                                    id: student.id,
-                                    roll_no: student.roll_no,
-                                    name: student.name,
-                                    class: student.class,
-                                    email: student.email,
-                                    results: resultsData,
-                                    attendance: attendanceData[0] || {present:0, total:0},
-                                    performance: performanceData[0] || null,
-                                    notices: noticesData.map(n => n.title),
-                                    exams: examsData.map(e => e.exam_name),
-                                    assignments: assignmentsData.map(a => a.title)
-                                });
-                            });
-                        });
-                    });
-                });
-            });
+        res.json({
+            success: true,
+            student: {
+                id: student.id,
+                name: student.name,
+                roll_number: student.roll_number,
+                registration_number: student.registration_number,
+                department: student.department,
+                semester: student.semester,
+                session: student.session,
+                phone_number: student.phone_number
+            },
+            results: resultsData,
+            attendance: attendanceData,
+            performance: performanceData[0] || null,
+            notices: noticesData.map(n => n.title),
+            exams: examsData.map(e => e.name),
+            assignments: assignmentsData.map(a => a.title)
         });
-    });
+    } catch (err) {
+        console.error('Error fetching student data:', err);
+        res.status(500).json({ success: false, message: 'Error fetching data' });
+    }
 });
 
-// Start server
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+// ---------------- Server Start ---------------- //
+app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPI Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { 
+    font-family: 'Inter', sans-serif;
+    background-color: #f7fafc; /* Light gray background */
+  }
+  .hero-bg { 
+    background: linear-gradient(135deg, #4f46e5, #10b981); /* Deep blue and green gradient */
+  }
+  .dropdown-menu {
+    display: none;
+  }
+  .dropdown-menu.show {
+    display: block;
+  }
+</style>
+</head>
+<body class="text-gray-800">
+
+<!-- Navbar -->
+<nav class="sticky top-0 z-50 bg-white shadow-xl py-4 px-6 md:px-12 flex justify-between items-center rounded-b-xl">
+    <div class="text-2xl font-extrabold text-gray-800">
+        BPI <span class="text-indigo-600">Portal</span>
+    </div>
+    <div class="flex items-center space-x-4 relative">
+        <a href="#about" class="text-gray-600 hover:text-indigo-600 transition">About</a>
+        <a href="#academics" class="text-gray-600 hover:text-indigo-600 transition">Academics</a>
+        <a href="#news" class="text-gray-600 hover:text-indigo-600 transition">News</a>
+        
+        <!-- Login Button with Dropdown -->
+        <button id="logoButton" class="flex items-center space-x-2 text-gray-600 hover:text-indigo-600 transition focus:outline-none">
+            <span class="font-semibold hidden md:block">Login</span>
+            <div class="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-500 text-white font-bold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                </svg>
+            </div>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div id="loginDropdown" class="dropdown-menu absolute top-full right-0 mt-4 w-48 bg-white rounded-lg shadow-xl py-2 z-50 transform origin-top-right scale-95 transition-transform">
+            <a href="student-login.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition rounded-md mx-2 text-center">Student Login</a>
+            <a href="teacher-login.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition rounded-md mx-2 text-center">Teacher Login</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<header class="hero-bg py-24 px-6 md:px-12 flex flex-col items-center justify-center text-center text-white">
+    <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm p-8 md:p-12 rounded-3xl shadow-2xl max-w-2xl text-gray-800 transform transition-transform hover:scale-105">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4">Welcome to BPI Portal</h1>
+        <p class="text-lg md:text-xl text-gray-600 mb-8">
+            Your gateway to academic excellence and a vibrant campus community.
+        </p>
+        <a href="#about" class="bg-indigo-600 text-white py-3 px-8 rounded-full text-lg font-semibold hover:bg-indigo-700 transition transform hover:scale-105">Explore More</a>
+    </div>
+</header>
+
+<!-- Main Content Sections -->
+<main class="container mx-auto p-6 md:p-12 space-y-16">
+
+    <!-- About BPI Section -->
+    <section id="about" class="bg-white p-8 md:p-12 rounded-3xl shadow-xl">
+        <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">About BPI</h2>
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div class="p-4 rounded-lg bg-gray-50">
+                <img src="https://placehold.co/600x400/4f46e5/FFFFFF?text=BPI+Campus" alt="BPI Campus" class="rounded-2xl shadow-lg w-full">
+            </div>
+            <div>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    Bogra Polytechnic Institute (BPI) is a leading educational institution dedicated to providing high-quality technical education. Our mission is to empower students with the skills and knowledge needed to excel in their careers and contribute to a better society.
+                </p>
+                <p class="text-gray-700 leading-relaxed">
+                    We offer a wide range of diploma programs, state-of-the-art laboratories, and experienced faculty to ensure a comprehensive learning experience.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Academic Programs Section -->
+    <section id="academics" class="p-8 md:p-12">
+        <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Our Academic Programs</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow transform hover:-translate-y-1">
+                <h3 class="text-xl font-semibold mb-2 text-indigo-600">Computer Science</h3>
+                <p class="text-gray-600 text-sm">A robust program focused on software development, networking, and modern computing technologies.</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow transform hover:-translate-y-1">
+                <h3 class="text-xl font-semibold mb-2 text-green-600">Civil Engineering</h3>
+                <p class="text-gray-600 text-sm">Learn the fundamentals of designing and constructing buildings, bridges, and infrastructure.</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow transform hover:-translate-y-1">
+                <h3 class="text-xl font-semibold mb-2 text-purple-600">Electrical Technology</h3>
+                <p class="text-gray-600 text-sm">Explore the world of electrical systems, power generation, and electronics with hands-on training.</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow transform hover:-translate-y-1">
+                <h3 class="text-xl font-semibold mb-2 text-red-600">Mechanical Technology</h3>
+                <p class="text-gray-600 text-sm">Master the principles of machinery, thermodynamics, and manufacturing processes.</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow transform hover:-translate-y-1">
+                <h3 class="text-xl font-semibold mb-2 text-yellow-600">Electronics Technology</h3>
+                <p class="text-gray-600 text-sm">Dive deep into the design, development, and application of electronic circuits and systems.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Latest News Section -->
+    <section id="news" class="bg-white p-8 md:p-12 rounded-3xl shadow-xl">
+        <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Latest News & Events</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-md">
+                <h3 class="font-semibold text-lg mb-2">Annual Sports Day</h3>
+                <p class="text-gray-600 text-sm">Join us for the annual sports day on November 15th! All students and faculty are encouraged to participate.</p>
+            </div>
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-md">
+                <h3 class="font-semibold text-lg mb-2">Job Fair 2024</h3>
+                <p class="text-gray-600 text-sm">The BPI Job Fair will take place on October 20th, featuring top companies seeking talented students.</p>
+            </div>
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-md">
+                <h3 class="font-semibold text-lg mb-2">New Library Annex</h3>
+                <p class="text-gray-600 text-sm">Our new library annex is now open, offering more space and resources for study and research.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Student Life Section -->
+    <section class="bg-indigo-50 p-8 md:p-12 rounded-3xl shadow-xl">
+        <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Student Life</h2>
+        <p class="text-center text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed">
+            BPI is more than just classes. We foster a vibrant student community with a wide array of clubs, cultural events, and co-curricular activities.
+        </p>
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+                <img src="https://placehold.co/600x400/10b981/FFFFFF?text=Student+Activity" alt="Student Activity" class="rounded-2xl shadow-lg w-full">
+            </div>
+            <div>
+                <ul class="space-y-4 text-gray-700">
+                    <li class="flex items-center space-x-2">
+                        <svg class="h-6 w-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                        <span>Student Clubs & Organizations</span>
+                    </li>
+                    <li class="flex items-center space-x-2">
+                        <svg class="h-6 w-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                        <span>Cultural Festivals & Events</span>
+                    </li>
+                    <li class="flex items-center space-x-2">
+                        <svg class="h-6 w-6 text-indigo-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                        <span>Volunteer and Community Service Programs</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Us Section -->
+    <section class="bg-gray-100 p-8 md:p-12 rounded-3xl shadow-xl">
+        <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Contact Us</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm">
+                <h3 class="text-xl font-semibold mb-2">Address</h3>
+                <p class="text-gray-600 text-center">Bogra Polytechnic Institute, Sherpur Road, Bogura-5800, Bangladesh</p>
+            </div>
+            <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm">
+                <h3 class="text-xl font-semibold mb-2">Get in Touch</h3>
+                <ul class="space-y-2 text-gray-600 text-center">
+                    <li><a href="tel:+8801711234567" class="hover:text-indigo-600 transition">Phone: +880 1711-234567</a></li>
+                    <li><a href="mailto:info@bpi.edu.bd" class="hover:text-indigo-600 transition">Email: info@bpi.edu.bd</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Footer Section -->
+<footer class="bg-gray-800 text-white py-12">
+    <div class="container mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Footer Branding -->
+        <div>
+            <h3 class="text-2xl font-bold mb-4">BPI Portal</h3>
+            <p class="text-gray-400 text-sm">
+                Empowering the future through quality technical education.
+            </p>
+        </div>
+        <!-- Quick Links -->
+        <div>
+            <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+            <ul class="space-y-2 text-gray-400">
+                <li><a href="#about" class="hover:text-indigo-400 transition">About Us</a></li>
+                <li><a href="#academics" class="hover:text-indigo-400 transition">Academics</a></li>
+                <li><a href="#news" class="hover:text-indigo-400 transition">News & Events</a></li>
+            </ul>
+        </div>
+        <!-- Contact Info -->
+        <div>
+            <h4 class="text-lg font-semibold mb-4">Contact</h4>
+            <ul class="space-y-2 text-gray-400">
+                <li class="flex items-center">
+                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884zM18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+                    info@bpi.edu.bd
+                </li>
+                <li class="flex items-center">
+                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.774a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.06-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.163 18 3 13.837 3 8V6a1 1 0 011-1h1z"></path></svg>
+                    +880 1711-234567
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="mt-8 text-center text-gray-500 border-t border-gray-700 pt-6">
+        <p>&copy; 2024 BPI Portal. All rights reserved.</p>
+    </div>
+</footer>
+
+<script>
+    const logoButton = document.getElementById('logoButton');
+    const loginDropdown = document.getElementById('loginDropdown');
+
+    // Function to toggle the dropdown
+    function toggleDropdown() {
+        loginDropdown.classList.toggle('show');
+    }
+
+    // Button click event listener
+    logoButton.addEventListener('click', (event) => {
+        event.stopPropagation(); // Prevents the event from propagating to the window
+        toggleDropdown();
+    });
+
+    // Logic to close the dropdown when clicking outside
+    window.addEventListener('click', (event) => {
+        if (!loginDropdown.contains(event.target) && !logoButton.contains(event.target)) {
+            if (loginDropdown.classList.contains('show')) {
+                toggleDropdown();
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
