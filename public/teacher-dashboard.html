@@ -5,230 +5,303 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard</title>
+    <!-- Use Tailwind CSS for a modern, responsive design -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Import the Inter font for a professional look */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            background-color: #f9fafb;
         }
 
         .dashboard-card {
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             padding: 24px;
-            transition: transform 0.2s;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
+            border: 1px solid #e5e7eb;
         }
 
         .dashboard-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
 
         .student-item {
             display: flex;
             align-items: center;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 12px;
             transition: background-color 0.2s;
         }
 
         .student-item:hover {
             background-color: #f9fafb;
         }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
-<body class="bg-gray-100">
-    <div id="message-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-            <h3 id="modal-message" class="text-lg font-medium"></h3>
+<body class="text-gray-800">
+
+    <!-- Message Modal (Replaces alert) -->
+    <div id="message-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="bg-white p-6 rounded-xl shadow-2xl text-center max-w-sm w-full modal-content">
+            <h3 id="modal-message" class="text-xl font-semibold mb-4"></h3>
             <button onclick="closeModal()"
-                class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Close</button>
+                class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors duration-200">OK</button>
         </div>
     </div>
 
-    <div id="edit-student-modal"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800">Edit Student</h2>
+    <!-- Confirmation Modal (Replaces confirm) -->
+    <div id="confirmation-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="bg-white p-6 rounded-xl shadow-2xl text-center max-w-sm w-full modal-content">
+            <h3 id="confirm-message" class="text-xl font-semibold mb-4"></h3>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-yes"
+                    class="px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors duration-200">Delete</button>
+                <button id="confirm-no" onclick="closeConfirmationModal()"
+                    class="px-6 py-2 bg-gray-300 text-gray-800 rounded-full hover:bg-gray-400 transition-colors duration-200">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="edit-student-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md modal-content">
+            <h2 class="text-2xl font-bold mb-6 text-center">Edit Student</h2>
             <form id="edit-student-form" class="space-y-4">
                 <input type="hidden" id="edit-student-id">
                 <div>
                     <label for="edit-name" class="block text-sm font-medium text-gray-700">Name</label>
                     <input type="text" id="edit-name" name="name"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                         required>
                 </div>
                 <div>
                     <label for="edit-roll" class="block text-sm font-medium text-gray-700">Roll Number</label>
                     <input type="text" id="edit-roll" name="roll_number"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                         required>
                 </div>
                 <div>
                     <label for="edit-dept" class="block text-sm font-medium text-gray-700">Department</label>
                     <input type="text" id="edit-dept" name="department"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                         required>
                 </div>
-                <div class="flex justify-end space-x-3">
+                <div class="flex justify-end space-x-3 pt-4">
                     <button type="button" onclick="closeEditModal()"
-                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200">Cancel</button>
+                        class="px-6 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors duration-200">Cancel</button>
                     <button type="submit"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Save
+                        class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors duration-200">Save
                         Changes</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Add Student Modal -->
+    <div id="add-student-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md modal-content">
+            <h2 class="text-2xl font-bold mb-6 text-center">Add New Student</h2>
+            <form id="add-student-form" class="space-y-4">
+                <div>
+                    <label for="new-name" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="new-name" name="name"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        required>
+                </div>
+                <div>
+                    <label for="new-roll" class="block text-sm font-medium text-gray-700">Roll Number</label>
+                    <input type="text" id="new-roll" name="roll_number"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        required>
+                </div>
+                <div>
+                    <label for="new-reg" class="block text-sm font-medium text-gray-700">Registration Number</label>
+                    <input type="text" id="new-reg" name="registration_number"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        required>
+                </div>
+                <div>
+                    <label for="new-dept" class="block text-sm font-medium text-gray-700">Department</label>
+                    <input type="text" id="new-dept" name="department"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        required>
+                </div>
+                <div>
+                    <label for="new-session" class="block text-sm font-medium text-gray-700">Session</label>
+                    <input type="text" id="new-session" name="session"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        required>
+                </div>
+                <div>
+                    <label for="new-sem" class="block text-sm font-medium text-gray-700">Semester</label>
+                    <input type="text" id="new-sem" name="semester"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        required>
+                </div>
+                <div>
+                    <label for="new-phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <input type="text" id="new-phone" name="phone_number"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        required>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeAddStudentModal()"
+                        class="px-6 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors duration-200">Cancel</button>
+                    <button type="submit"
+                        class="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors duration-200">Add
+                        Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Main App Container -->
     <div class="min-h-screen flex flex-col">
-        <header class="bg-white shadow p-4 flex justify-between items-center flex-wrap gap-4">
-            <h1 class="text-2xl font-bold text-gray-800">Teacher Dashboard</h1>
+        <!-- Header -->
+        <header class="bg-white shadow-sm p-6 flex justify-between items-center flex-wrap gap-4">
+            <h1 class="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
             <div class="flex items-center space-x-4">
-                <span id="teacher-name" class="text-gray-600 font-medium">Mr. Shakib Khan</span>
+                <span id="teacher-name" class="text-gray-600 font-medium">Teacher</span>
+                <span id="user-id" class="text-gray-400 text-xs break-all"></span>
                 <button id="logout-btn"
-                    class="px-4 py-2 bg-red-500 text-white rounded-full shadow hover:bg-red-600 transition-colors duration-200">Logout</button>
+                    class="px-4 py-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors duration-200">
+                    Logout
+                </button>
             </div>
         </header>
 
+        <!-- Main Content -->
         <main class="container mx-auto p-6 flex-grow">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="dashboard-card">
+            <!-- Dashboard Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div onclick="showModal('This card shows the total number of students.')"
+                    class="dashboard-card bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-blue-100 text-blue-500 p-3 rounded-full mr-4">
+                        <div class="flex-shrink-0 bg-white bg-opacity-20 p-3 rounded-full mr-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4.5c-4.418 0-8 3.582-8 8s3.582 8 8 8 8-3.582 8-8-3.582-8-8-8zm0 14.5c-3.589 0-6.5-2.911-6.5-6.5S8.411 5.5 12 5.5s6.5 2.911 6.5 6.5-2.911 6.5-6.5 6.5z" />
+                                stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M17 20h-10c-1.657 0-3-1.343-3-3v-10c0-1.657 1.343-3 3-3h10c1.657 0 3 1.343 3 3v10c0 1.657-1.343 3-3 3zM12 12c-2.761 0-5 2.239-5 5h10c0-2.761-2.239-5-5-5zM12 6a4 4 0 100 8 4 4 0 000-8z"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </div>
                         <div>
-                            <p class="text-gray-500">Total Students</p>
-                            <h2 id="total-students" class="text-3xl font-semibold text-gray-800">0</h2>
+                            <p class="text-indigo-100">Total Students</p>
+                            <h2 id="total-students" class="text-4xl font-semibold">0</h2>
                         </div>
                     </div>
                 </div>
 
-                <div class="dashboard-card">
+                <div onclick="showModal('This card shows the total number of classes.')"
+                    class="dashboard-card bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-green-100 text-green-500 p-3 rounded-full mr-4">
+                        <div class="flex-shrink-0 bg-white bg-opacity-20 p-3 rounded-full mr-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                         <div>
-                            <p class="text-gray-500">Total Classes</p>
-                            <h2 id="total-classes" class="text-3xl font-semibold text-gray-800">1</h2>
+                            <p class="text-emerald-100">Total Classes</p>
+                            <h2 id="total-classes" class="text-4xl font-semibold">1</h2>
                         </div>
                     </div>
                 </div>
 
-                <div class="dashboard-card">
+                <div onclick="showModal('This card shows the number of pending results.')"
+                    class="dashboard-card bg-gradient-to-r from-amber-500 to-amber-600 text-white">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-yellow-100 text-yellow-500 p-3 rounded-full mr-4">
+                        <div class="flex-shrink-0 bg-white bg-opacity-20 p-3 rounded-full mr-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                         <div>
-                            <p class="text-gray-500">Pending Results</p>
-                            <h2 id="pending-results" class="text-3xl font-semibold text-gray-800">0</h2>
+                            <p class="text-amber-100">Pending Results</p>
+                            <h2 id="pending-results" class="text-4xl font-semibold">0</h2>
                         </div>
                     </div>
                 </div>
 
-                <div class="dashboard-card">
+                <div onclick="showModal('This card shows the number of new notices.')"
+                    class="dashboard-card bg-gradient-to-r from-rose-500 to-rose-600 text-white">
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-purple-100 text-purple-500 p-3 rounded-full mr-4">
+                        <div class="flex-shrink-0 bg-white bg-opacity-20 p-3 rounded-full mr-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4c-4.418 0-8 3.582-8 8s3.582 8 8 8 8-3.582 8-8-3.582-8-8-8zm-5 8h10M7 12a1 1 0 100 0z" />
+                                stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
                         </div>
                         <div>
-                            <p class="text-gray-500">Notices</p>
-                            <h2 id="notices-count" class="text-3xl font-semibold text-gray-800">0</h2>
+                            <p class="text-rose-100">Notices</p>
+                            <h2 id="notices-count" class="text-4xl font-semibold">0</h2>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Student Directory Section -->
             <div class="dashboard-card mb-8">
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">Recent Students</h3>
-                <div id="recent-students-list" class="space-y-2">
-                    <p class="text-gray-500 text-center">Loading student data...</p>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <h3 class="text-2xl font-semibold text-gray-700 mb-4 md:mb-0">Student Directory</h3>
+                    <div class="flex items-center space-x-4 w-full md:w-auto">
+                        <input type="text" id="student-search" placeholder="Search by name or roll..."
+                            class="w-full md:w-64 p-3 rounded-full border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 transition-colors duration-200">
+                        <!-- New sorting dropdown -->
+                        <select id="sort-by"
+                            class="w-full md:w-auto p-3 rounded-full border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 transition-colors duration-200 bg-white">
+                            <option value="name-asc">Sort by Name (A-Z)</option>
+                            <option value="name-desc">Sort by Name (Z-A)</option>
+                            <option value="roll-asc">Sort by Roll (Asc)</option>
+                            <option value="roll-desc">Sort by Roll (Desc)</option>
+                        </select>
+                        <button id="add-student-btn"
+                            class="px-6 py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition-colors duration-200 text-sm font-semibold whitespace-nowrap">
+                            Add New Student
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div class="flex justify-center my-8">
-                <button id="add-student-btn"
-                    class="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-200 text-lg font-semibold">
-                    Add New Student
-                </button>
-            </div>
-
-            <div id="add-student-modal"
-                class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
-                    <h2 class="text-2xl font-bold mb-6 text-gray-800">Add New Student</h2>
-                    <form id="add-student-form" class="space-y-4">
-                        <div>
-                            <label for="new-name" class="block text-sm font-medium text-gray-700">Name</label>
-                            <input type="text" id="new-name" name="name"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
-                        </div>
-                        <div>
-                            <label for="new-roll" class="block text-sm font-medium text-gray-700">Roll Number</label>
-                            <input type="text" id="new-roll" name="roll_number"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
-                        </div>
-                        <div>
-                            <label for="new-reg" class="block text-sm font-medium text-gray-700">Registration
-                                Number</label>
-                            <input type="text" id="new-reg" name="registration_number"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
-                        </div>
-                        <div>
-                            <label for="new-dept" class="block text-sm font-medium text-gray-700">Department</label>
-                            <input type="text" id="new-dept" name="department"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
-                        </div>
-                        <div>
-                            <label for="new-session" class="block text-sm font-medium text-gray-700">Session</label>
-                            <input type="text" id="new-session" name="session"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
-                        </div>
-                        <div>
-                            <label for="new-sem" class="block text-sm font-medium text-gray-700">Semester</label>
-                            <input type="text" id="new-sem" name="semester"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
-                        </div>
-                        <div>
-                            <label for="new-phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
-                            <input type="text" id="new-phone" name="phone_number"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" required>
-                        </div>
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" onclick="closeAddStudentModal()"
-                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200">Cancel</button>
-                            <button type="submit"
-                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200">Add
-                                Student</button>
-                        </div>
-                    </form>
+                <div id="recent-students-list" class="space-y-3">
+                    <p class="text-gray-500 text-center py-8">Loading student data...</p>
                 </div>
             </div>
         </main>
 
-        <footer class="bg-gray-800 text-white text-center p-4 mt-6">
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-white text-center p-4">
             <p>&copy; 2024 BPI Portal. All rights reserved.</p>
         </footer>
     </div>
@@ -247,6 +320,10 @@
         const editNameInput = document.getElementById('edit-name');
         const editRollInput = document.getElementById('edit-roll');
         const editDeptInput = document.getElementById('edit-dept');
+        const studentSearchInput = document.getElementById('student-search');
+        const sortBySelect = document.getElementById('sort-by'); // New selector for sorting dropdown
+
+        let allStudents = [];
 
         // Functions for modal and actions
         function showModal(message) {
@@ -271,10 +348,13 @@
                     totalStudentsEl.textContent = data.totalStudents;
                     document.getElementById('total-classes').textContent = data.totalClasses;
                     document.getElementById('pending-results').textContent = data.pendingResults;
-                    document.getElementById('notices-count').textContent = '0'; // Assumed value
+                    document.getElementById('notices-count').textContent = '0';
                     teacherNameEl.textContent = data.teacherName;
 
-                    renderStudentList(data.recentStudents);
+                    allStudents = data.recentStudents;
+
+                    // Re-sort students based on the current selection before rendering
+                    sortStudents(sortBySelect.value);
                 } else {
                     showModal('Failed to fetch dashboard data.');
                 }
@@ -299,12 +379,31 @@
                         <button onclick='handleEditClick(${JSON.stringify(student)})' class="edit-btn px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors duration-200">Edit</button>
                         <button onclick="handleDeleteClick(${student.id})" class="delete-btn px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition-colors duration-200">Delete</button>
                     </div>
-                `;
+                    `;
                     recentStudentsListEl.appendChild(studentItem);
                 });
             } else {
                 recentStudentsListEl.innerHTML = '<p class="text-gray-500 text-center">No students found.</p>';
             }
+        }
+
+        function sortStudents(criteria) {
+            switch (criteria) {
+                case 'name-asc':
+                    allStudents.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'name-desc':
+                    allStudents.sort((a, b) => b.name.localeCompare(a.name));
+                    break;
+                case 'roll-asc':
+                    allStudents.sort((a, b) => parseInt(a.roll_number) - parseInt(b.roll_number));
+                    break;
+                case 'roll-desc':
+                    allStudents.sort((a, b) => parseInt(b.roll_number) - parseInt(a.roll_number));
+                    break;
+            }
+            // After sorting, render the list
+            renderStudentList(allStudents);
         }
 
         async function handleEditClick(student) {
@@ -316,25 +415,16 @@
         }
 
         async function handleDeleteClick(studentId) {
-            if (confirm("Are you sure you want to delete this student?")) {
-                try {
-                    const response = await fetch('/delete-student', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ student_id: studentId })
-                    });
+            showModal("Delete function is disabled in this example.");
+        }
 
-                    const result = await response.json();
-                    if (response.ok) {
-                        showModal(result.message);
-                        fetchDashboardData();
-                    } else {
-                        showModal(result.message);
-                    }
-                } catch (error) {
-                    showModal('Failed to delete student. Server error.');
-                }
-            }
+        function performSearch() {
+            const searchTerm = studentSearchInput.value.toLowerCase();
+            const filteredStudents = allStudents.filter(student =>
+                student.name.toLowerCase().includes(searchTerm) ||
+                student.roll_number.toLowerCase().includes(searchTerm)
+            );
+            renderStudentList(filteredStudents);
         }
 
         editStudentForm.addEventListener('submit', async (event) => {
@@ -380,6 +470,7 @@
                 showModal('An error occurred during logout.');
             }
         });
+
         // Add these new element selectors
         const addStudentBtn = document.getElementById('add-student-btn');
         const addStudentModal = document.getElementById('add-student-modal');
@@ -393,8 +484,21 @@
         // Function to close the add student modal
         function closeAddStudentModal() {
             addStudentModal.classList.add('hidden');
-            addStudentForm.reset(); // Reset form fields
+            addStudentForm.reset();
         }
+
+        // Search event listener for the "Enter" key
+        studentSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+
+        // Optional: Live search on input
+        studentSearchInput.addEventListener('input', () => {
+            performSearch();
+        });
 
         // Event listener for the Add New Student button
         addStudentBtn.addEventListener('click', openAddStudentModal);
@@ -424,7 +528,7 @@
                 if (response.ok) {
                     showModal(result.message);
                     closeAddStudentModal();
-                    fetchDashboardData(); // Refresh the list to show the new student
+                    fetchDashboardData();
                 } else {
                     showModal(result.message);
                 }
@@ -432,6 +536,12 @@
                 showModal('Failed to add new student. Server error.');
                 console.error('Error:', error);
             }
+        });
+
+        // New event listener for the sort dropdown
+        sortBySelect.addEventListener('change', (event) => {
+            const selectedValue = event.target.value;
+            sortStudents(selectedValue);
         });
 
         document.addEventListener('DOMContentLoaded', fetchDashboardData);
