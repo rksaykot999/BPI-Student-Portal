@@ -125,7 +125,8 @@ app.get('/dashboard-data', async (req, res) => {
         const [studentCountResult] = await connection.execute('SELECT COUNT(*) AS totalStudents FROM student');
         const totalStudents = studentCountResult[0].totalStudents;
 
-        const [recentStudents] = await connection.execute('SELECT id, name, roll_number, department, semester FROM student ORDER BY id DESC LIMIT 5');
+        const [recentStudents] = await connection.execute(
+            'SELECT id, name, roll_number, department, semester FROM student ORDER BY id DESC');
 
         const [totalClassesResult] = await connection.execute('SELECT COUNT(DISTINCT exam_name) AS totalClasses FROM exams');
         const totalClasses = totalClassesResult[0].totalClasses;
@@ -222,7 +223,7 @@ app.post('/ai-analysis', async (req, res) => {
 // Route to add a new student
 app.post('/add-student', async (req, res) => {
     const { name, roll_number, registration_number, department, semester, phone_number, session } = req.body;
-    
+
     let connection;
     try {
         connection = await pool.getConnection();
@@ -320,7 +321,7 @@ app.post('/delete-student', async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        
+
         await connection.beginTransaction();
 
         await connection.execute('DELETE FROM results WHERE student_id = ?', [student_id]);

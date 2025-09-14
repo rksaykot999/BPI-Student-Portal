@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" xintegrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -37,16 +37,17 @@
             color: transparent;
         }
 
+        table {
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
         #results-table-body td,
-        #attendance-table-body td {
+        #attendance-table-body td,
+        #assignments-table-body td {
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
             border-bottom: 1px solid #e5e7eb;
-        }
-
-        #results-table-body tr:last-child td,
-        #attendance-table-body tr:last-child td {
-            border-bottom: none;
         }
     </style>
 </head>
@@ -71,6 +72,7 @@
         </header>
 
         <main class="container mx-auto p-4 sm:p-8 flex-grow">
+            <!-- Student Profile & Academic Info -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
                 <div class="dashboard-card col-span-1 lg:col-span-2">
                     <div
@@ -115,7 +117,8 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <!-- Dashboard Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
                 <div class="dashboard-card text-center stat-card blue">
                     <h3 class="text-xl font-semibold stat-card-title">Total Marks</h3>
                     <p id="total-marks" class="stat-card-value mt-2 text-3xl font-bold text-blue-600">0</p>
@@ -128,8 +131,13 @@
                     <h3 class="text-xl font-semibold stat-card-title">Total Subjects</h3>
                     <p id="total-courses" class="stat-card-value mt-2 text-3xl font-bold text-purple-600">0</p>
                 </div>
+                <div class="dashboard-card text-center stat-card purple">
+                    <h3 class="text-xl font-semibold stat-card-title">Avg. Assignment Score</h3>
+                    <p id="avg-assignment-score" class="stat-card-value mt-2 text-3xl font-bold text-yellow-600">0</p>
+                </div>
             </div>
 
+            <!-- Exam Results & Attendance Record -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 <div class="dashboard-card">
                     <h3 class="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-2">
@@ -186,6 +194,49 @@
                 </div>
             </div>
 
+            <!-- New Assignments Section -->
+            <div class="dashboard-card mb-8">
+                <h3 class="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-2xl text-violet-500"></i>
+                    Upcoming Assignments
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full rounded-xl overflow-hidden">
+                        <thead class="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white">
+                            <tr class="text-left text-sm font-semibold">
+                                <th class="py-3 px-4">Assignment</th>
+                                <th class="py-3 px-4">Due Date</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4">Marks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignments-table-body" class="bg-white">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="no-assignments-message" class="hidden text-center text-gray-500 py-8">
+                    <p>No assignments found.</p>
+                </div>
+            </div>
+
+            <!-- Performance Section -->
+            <div class="dashboard-card mb-8">
+                <h3 class="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-2xl text-rose-500"></i>
+                    Performance & Remarks
+                </h3>
+                <div id="performance-content" class="space-y-4">
+                    <div class="bg-gray-50 p-4 rounded-xl shadow-inner">
+                        <p class="font-bold text-gray-800">Rating: <span id="performance-rating" class="font-semibold text-lg text-rose-600"></span>/5</p>
+                        <p class="text-gray-600 mt-2">Remarks: <span id="performance-remarks" class="italic"></span></p>
+                    </div>
+                </div>
+                <div id="no-performance-message" class="hidden text-center text-gray-500 py-8">
+                    <p>No performance remarks found.</p>
+                </div>
+            </div>
+
+            <!-- Notifications & Announcements -->
             <div class="dashboard-card mb-8">
                 <h3 class="text-2xl font-bold text-gray-700 mb-6 flex items-center gap-2">
                     <i class="fa-solid fa-bell text-2xl text-yellow-500"></i>
@@ -218,12 +269,18 @@
             const totalMarksEl = document.getElementById('total-marks');
             const totalAttendanceEl = document.getElementById('total-attendance');
             const totalCoursesEl = document.getElementById('total-courses');
+            const avgAssignmentScoreEl = document.getElementById('avg-assignment-score');
             const resultsTableBody = document.getElementById('results-table-body');
             const attendanceTableBody = document.getElementById('attendance-table-body');
+            const assignmentsTableBody = document.getElementById('assignments-table-body');
             const announcementList = document.getElementById('announcement-list');
+            const performanceRatingEl = document.getElementById('performance-rating');
+            const performanceRemarksEl = document.getElementById('performance-remarks');
             const noResultsMessage = document.getElementById('no-results-message');
             const noAttendanceMessage = document.getElementById('no-attendance-message');
+            const noAssignmentsMessage = document.getElementById('no-assignments-message');
             const noAnnouncementsMessage = document.getElementById('no-announcements-message');
+            const noPerformanceMessage = document.getElementById('no-performance-message');
 
             function showModal(message) {
                 document.getElementById('modal-message').textContent = message;
@@ -234,7 +291,7 @@
                 document.getElementById('message-modal').classList.add('hidden');
             }
 
-            // Get student ID from URL
+            // Get student ID from URL - this would be provided by your backend after a successful login
             const urlParams = new URLSearchParams(window.location.search);
             const studentId = urlParams.get('id');
 
@@ -246,6 +303,7 @@
 
             async function fetchStudentData() {
                 try {
+                    // This endpoint would query the 'student', 'results', and 'attendance' tables
                     const response = await fetch(`/student-dashboard-data/${studentId}`);
                     if (!response.ok) {
                         showModal('Failed to fetch student data.');
@@ -294,7 +352,8 @@
                         noAttendanceMessage.classList.remove('hidden');
                     }
                     
-                    // Fetch and render announcements
+                    await fetchAssignments();
+                    await fetchPerformance();
                     await fetchAnnouncements();
 
                 } catch (error) {
@@ -302,9 +361,64 @@
                     showModal('An error occurred. Please try again later.');
                 }
             }
+            
+            async function fetchAssignments() {
+                try {
+                    // NOTE: The 'assignments' table in your schema lacks a student-specific 'status' and 'marks' field.
+                    // A real system would need a 'student_assignments' table to track this.
+                    // This is a simulation using mock data to make the UI work.
+                    
+                    const mockAssignments = [
+                        { title: 'Database Management System Project', due_date: '2025-10-30', status: 'Completed', marks: 95 },
+                        { title: 'Data Structures Homework', due_date: '2025-10-25', status: 'Completed', marks: 88 },
+                        { title: 'Software Engineering Report', due_date: '2025-11-15', status: 'Pending', marks: null },
+                        { title: 'Physics Lab Report', due_date: '2025-10-28', status: 'Submitted', marks: null },
+                    ];
+
+                    if (mockAssignments.length > 0) {
+                        const completedAssignments = mockAssignments.filter(a => a.status === 'Completed');
+                        const totalScore = completedAssignments.reduce((sum, a) => sum + a.marks, 0);
+                        const avgScore = completedAssignments.length > 0 ? (totalScore / completedAssignments.length).toFixed(2) : 0;
+                        avgAssignmentScoreEl.textContent = avgScore;
+                        renderAssignments(mockAssignments);
+                        noAssignmentsMessage.classList.add('hidden');
+                    } else {
+                        assignmentsTableBody.innerHTML = '';
+                        avgAssignmentScoreEl.textContent = '0';
+                        noAssignmentsMessage.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error fetching assignments:', error);
+                }
+            }
+
+            async function fetchPerformance() {
+                try {
+                    // This endpoint would query the 'performance' table
+                    // Here we use mock data to simulate the fetch
+                    const mockPerformance = {
+                        remarks: 'Good progress, but needs to improve in group work.',
+                        rating: 4
+                    };
+
+                    if (mockPerformance) {
+                        performanceRatingEl.textContent = mockPerformance.rating;
+                        performanceRemarksEl.textContent = mockPerformance.remarks;
+                        noPerformanceMessage.classList.add('hidden');
+                    } else {
+                        performanceRatingEl.textContent = '';
+                        performanceRemarksEl.textContent = '';
+                        noPerformanceMessage.classList.remove('hidden');
+                    }
+
+                } catch (error) {
+                    console.error('Error fetching performance:', error);
+                }
+            }
 
             async function fetchAnnouncements() {
                 try {
+                    // This endpoint would query the 'notices' table
                     const response = await fetch('/announcements');
                     if (!response.ok) {
                         console.error('Failed to fetch announcements.');
@@ -349,6 +463,23 @@
                         <td class="py-3 px-4"><span class="${statusColor}">${record.status}</span></td>
                     `;
                     attendanceTableBody.appendChild(row);
+                });
+            }
+            
+            function renderAssignments(assignments) {
+                assignmentsTableBody.innerHTML = '';
+                assignments.forEach(assignment => {
+                    const row = document.createElement('tr');
+                    const dueDate = new Date(assignment.due_date).toLocaleDateString('en-GB');
+                    const statusColor = assignment.status === 'Completed' ? 'text-green-500' : 'text-red-500';
+                    row.className = 'border-b border-gray-200 hover:bg-gray-100';
+                    row.innerHTML = `
+                        <td class="py-3 px-4">${assignment.title}</td>
+                        <td class="py-3 px-4">${dueDate}</td>
+                        <td class="py-3 px-4"><span class="${statusColor}">${assignment.status}</span></td>
+                        <td class="py-3 px-4">${assignment.status === 'Completed' ? assignment.marks : '-'}</td>
+                    `;
+                    assignmentsTableBody.appendChild(row);
                 });
             }
 
