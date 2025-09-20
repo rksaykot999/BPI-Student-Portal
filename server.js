@@ -134,7 +134,7 @@ app.get('/dashboard-data', async (req, res) => {
         const [pendingResultsResult] = await connection.execute('SELECT COUNT(*) AS pendingResults FROM results WHERE grade IS NULL OR grade = ""');
         const pendingResults = pendingResultsResult[0].pendingResults;
 
-        const teacherName = "Mr. Shakib Khan";
+        const teacherName = "Teacher";
 
         res.status(200).json({
             teacherName,

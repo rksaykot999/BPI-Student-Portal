@@ -9,10 +9,12 @@
 <style>
   body { 
     font-family: 'Inter', sans-serif;
-    background-color: #f7fafc; /* Light gray background */
+    /* background-color: #f7fafc; Light gray background */
   }
-  .hero-bg { 
-    background: linear-gradient(135deg, #4f46e5, #10b981); /* Deep blue and green gradient */
+  .header-hero { 
+    background: url(/public/images/OIP_PhotoGrid.png);
+    background-size: cover;
+    height: 100vh;
   }
   .dropdown-menu {
     display: none;
@@ -27,7 +29,7 @@
 <!-- Navbar -->
 <nav class="sticky top-0 z-50 bg-white shadow-xl py-4 px-6 md:px-12 flex justify-between items-center rounded-b-xl">
     <div class="text-2xl font-extrabold text-gray-800">
-        BPI <span class="text-indigo-600">Portal</span>
+        <img height="50px" width="50px" src="/public/images/images.png" alt="">
     </div>
     <div class="flex items-center space-x-4 relative">
         <a href="#about" class="text-gray-600 hover:text-indigo-600 transition">About</a>
@@ -48,18 +50,21 @@
         <div id="loginDropdown" class="dropdown-menu absolute top-full right-0 mt-4 w-48 bg-white rounded-lg shadow-xl py-2 z-50 transform origin-top-right scale-95 transition-transform">
             <a href="student-login.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition rounded-md mx-2 text-center">Student Login</a>
             <a href="teacher-login.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition rounded-md mx-2 text-center">Teacher Login</a>
+            <a href="teacher-login.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition rounded-md mx-2 text-center">Admin Login</a>
         </div>
     </div>
 </nav>
 
 <!-- Hero Section -->
-<header class="hero-bg py-24 px-6 md:px-12 flex flex-col items-center justify-center text-center text-white">
-    <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm p-8 md:p-12 rounded-3xl shadow-2xl max-w-2xl text-gray-800 transform transition-transform hover:scale-105">
-        <h1 class="text-4xl md:text-6xl font-extrabold mb-4">Welcome to BPI Portal</h1>
-        <p class="text-lg md:text-xl text-gray-600 mb-8">
+<header class="header-hero pt-16">
+    <div class="bg-none backdrop-filter backdrop-blur-sm p-8 md:p-12 rounded-3xl shadow-2xl h-[600px] mx-auto max-w-4xl text-gray-800 transform transition-transform">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-10 pt-32 text-center">Welcome to BPI Portal</h1>
+        <p class="text-lg md:text-xl text-black mb-14 text-center">
             Your gateway to academic excellence and a vibrant campus community.
         </p>
-        <a href="#about" class="bg-indigo-600 text-white py-3 px-8 rounded-full text-lg font-semibold hover:bg-indigo-700 transition transform hover:scale-105">Explore More</a>
+        <div class="text-center">
+            <a href="#about" class="bg-indigo-600 text-white py-3 px-8 rounded-full text-lg font-semibold hover:bg-indigo-700 transition transform hover:scale-105">Explore More</a>
+        </div>
     </div>
 </header>
 
